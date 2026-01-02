@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { buildClickEventData } from "@/lib/analytics";
+import {
+  detectDevice,
+  getDeepLinkUrl,
+  appendUTMParams,
+  checkLinkStatus,
+  verifyPasswordSessionToken,
+} from "@/lib/redirect";
 
-// Rate limiting for redirects (prevent abuse)
+// Rate limiting for redirects
 const redirectRateLimitStore = new Map<string, { count: number; resetAt: number }>();
-const REDIRECT_RATE_LIMIT = 1000; // per minute per IP
+const REDIRECT_RATE_LIMIT = 1000;
 const REDIRECT_RATE_WINDOW = 60 * 1000;
 
-function checkRedirectRateLimit(ipHash: string): boolean {
+function checkRedirectRateLimit(ip: string): boolean {
   const now = Date.now();
-  const record = redirectRateLimitStore.get(ipHash);
+  const record = redirectRateLimitStore.get(ip);
 
   if (!record || record.resetAt < now) {
-    redirectRateLimitStore.set(ipHash, { count: 1, resetAt: now + REDIRECT_RATE_WINDOW });
+    redirectRateLimitStore.set(ip, { count: 1, resetAt: now + REDIRECT_RATE_WINDOW });
     return true;
   }
 
@@ -24,7 +31,7 @@ function checkRedirectRateLimit(ipHash: string): boolean {
   return true;
 }
 
-// Async tracking function (fire-and-forget)
+// Async tracking function
 async function trackClick(
   shortLinkId: string,
   ip: string | null,
@@ -34,23 +41,31 @@ async function trackClick(
   try {
     const eventData = buildClickEventData(ip, userAgent, referrer);
 
-    await prisma.clickEvent.create({
-      data: {
-        shortLinkId,
-        referrer: eventData.referrer,
-        referrerHost: eventData.referrerHost,
-        source: eventData.source,
-        userAgentRaw: eventData.userAgentRaw,
-        deviceType: eventData.deviceType,
-        os: eventData.os,
-        browser: eventData.browser,
-        ipHash: eventData.ipHash,
-        isBot: eventData.isBot,
-        country: eventData.country,
-      },
-    });
+    await Promise.all([
+      prisma.clickEvent.create({
+        data: {
+          shortLinkId,
+          referrer: eventData.referrer,
+          referrerHost: eventData.referrerHost,
+          source: eventData.source,
+          userAgentRaw: eventData.userAgentRaw,
+          deviceType: eventData.deviceType,
+          os: eventData.os,
+          browser: eventData.browser,
+          ipHash: eventData.ipHash,
+          isBot: eventData.isBot,
+          country: eventData.country,
+        },
+      }),
+      prisma.shortLink.update({
+        where: { id: shortLinkId },
+        data: {
+          clickCount: { increment: 1 },
+          lastClickedAt: new Date(),
+        },
+      }),
+    ]);
   } catch (error) {
-    // Log error but don't fail - tracking should not block redirect
     console.error("Error tracking click:", error);
   }
 }
@@ -63,71 +78,96 @@ export async function GET(
   try {
     const { code } = await params;
 
-    // Get IP for rate limiting
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ||
                request.headers.get("x-real-ip") ||
                "unknown";
 
-    // Simple rate limit check
-    const ipHash = ip; // We'll use raw IP for rate limiting, hash for storage
-    if (!checkRedirectRateLimit(ipHash)) {
+    if (!checkRedirectRateLimit(ip)) {
       return NextResponse.json(
         { error: "Rate limit exceeded. Please try again later." },
         { status: 429 }
       );
     }
 
-    // Find the short link
-    const link = await prisma.shortLink.findUnique({
-      where: { shortCode: code },
+    // Find short link (default domain - domainId is null)
+    const link = await prisma.shortLink.findFirst({
+      where: { shortCode: code, domainId: null },
+      include: { domain: true },
     });
 
-    // Link not found
     if (!link) {
-      return NextResponse.json(
-        { error: "Link not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Link not found" }, { status: 404 });
     }
 
-    // Link is disabled
-    if (link.disabled) {
-      return NextResponse.json(
-        { error: "This link has been disabled" },
-        { status: 410 } // Gone
-      );
+    // Check link status (disabled, scheduled, expired, password)
+    const statusCheck = checkLinkStatus({
+      disabled: link.disabled,
+      status: link.status,
+      startsAt: link.startsAt,
+      expiresAt: link.expiresAt,
+      password: link.password,
+    });
+
+    if (!statusCheck.canAccess) {
+      // Password protected
+      if (statusCheck.status === "password_required") {
+        const sessionToken = request.cookies.get(`lf_pw_${link.id}`)?.value;
+        if (!sessionToken || !verifyPasswordSessionToken(sessionToken, link.id)) {
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+          return NextResponse.redirect(`${baseUrl}/p/${code}`, { status: 302 });
+        }
+      } else {
+        return NextResponse.json(
+          { error: statusCheck.message },
+          { status: statusCheck.status === "expired" ? 410 : 403 }
+        );
+      }
     }
 
-    // Link has expired
-    if (link.expiresAt && link.expiresAt < new Date()) {
-      return NextResponse.json(
-        { error: "This link has expired" },
-        { status: 410 } // Gone
-      );
-    }
-
-    // Get tracking data from headers
     const userAgent = request.headers.get("user-agent");
     const referrer = request.headers.get("referer") || request.headers.get("referrer");
+    const device = detectDevice(userAgent);
 
-    // Fire-and-forget tracking (don't await)
-    // Using Promise.resolve().then() to ensure it runs after response
+    let redirectUrl = link.longUrl;
+
+    // Mobile deep linking
+    if ((device.os === "ios" || device.os === "android") && (link.iosScheme || link.androidScheme)) {
+      redirectUrl = getDeepLinkUrl(device, {
+        iosScheme: link.iosScheme,
+        iosAppStore: link.iosAppStore,
+        androidScheme: link.androidScheme,
+        androidPlay: link.androidPlay,
+      }, link.longUrl);
+    }
+
+    // Append UTM parameters
+    if (link.utmSource || link.utmMedium || link.utmCampaign) {
+      redirectUrl = appendUTMParams(redirectUrl, {
+        utmSource: link.utmSource,
+        utmMedium: link.utmMedium,
+        utmCampaign: link.utmCampaign,
+        utmTerm: link.utmTerm,
+        utmContent: link.utmContent,
+      });
+    }
+
+    // Fire-and-forget tracking
     trackClick(link.id, ip, userAgent, referrer);
 
-    // Redirect immediately (302 for temporary redirect, allows analytics tracking)
-    return NextResponse.redirect(link.longUrl, {
-      status: 302,
+    // Redirect with configured status (301 or 302)
+    const redirectStatus = link.redirectType === 301 ? 301 : 302;
+
+    return NextResponse.redirect(redirectUrl, {
+      status: redirectStatus,
       headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate",
+        "Cache-Control": redirectStatus === 301
+          ? "public, max-age=31536000"
+          : "no-store, no-cache, must-revalidate",
         "X-Robots-Tag": "noindex, nofollow",
       },
     });
-
   } catch (error) {
     console.error("Error in redirect:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -11,6 +11,11 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
+  Globe,
+  FolderOpen,
+  Tag,
+  Target,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,7 +25,10 @@ const navItems = [
   { icon: Home, label: "Dashboard", href: "/app" },
   { icon: Link2, label: "Links", href: "/app/links" },
   { icon: QrCode, label: "QR Codes", href: "/app/qr" },
+  { icon: FileText, label: "Pages", href: "/app/pages" },
   { icon: BarChart3, label: "Analytics", href: "/app/analytics" },
+  { icon: Target, label: "UTM Builder", href: "/app/utm-builder" },
+  { icon: Globe, label: "Domains", href: "/app/domains" },
   { icon: Settings, label: "Settings", href: "/app/settings" },
 ];
 

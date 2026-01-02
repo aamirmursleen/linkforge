@@ -9,84 +9,475 @@ datasource db {
   provider = "sqlite"
 }
 
-// User model for authentication (simplified for now)
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String   // In production, use hashed passwords
-  role      String   @default("user") // user, admin
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ============================================
+// WORKSPACE & USER MANAGEMENT
+// ============================================
 
-  // Relations
-  shortLinks ShortLink[]
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logo        String?
+
+  plan        String   @default("free")
+  linksLimit  Int      @default(5)
+  qrLimit     Int      @default(2)
+  domainsLimit Int     @default(0)
+
+  linksUsed   Int      @default(0)
+  qrUsed      Int      @default(0)
+  usageResetAt DateTime @default(now())
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     WorkspaceMember[]
+  domains     Domain[]
+  shortLinks  ShortLink[]
+  folders     Folder[]
+  tags        Tag[]
+  apiKeys     ApiKey[]
+  pages       Page[]
+  qrCodes     QRCode[]
+
+  @@index([slug])
 }
 
-// Short Links model
-model ShortLink {
+model WorkspaceMember {
   id          String   @id @default(cuid())
-  shortCode   String   @unique
-  longUrl     String
-  title       String?
-  description String?
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Ownership
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  role        String   @default("member")
+  invitedAt   DateTime @default(now())
+  joinedAt    DateTime?
 
-  // Status
-  disabled  Boolean   @default(false)
-  expiresAt DateTime?
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  clickEvents ClickEvent[]
-
-  // Indexes
-  @@index([shortCode])
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
   @@index([userId])
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  password      String
+  avatar        String?
+  role          String   @default("user")
+
+  twoFactorEnabled  Boolean  @default(false)
+  twoFactorSecret   String?
+  backupCodes       String?
+
+  emailVerified     Boolean  @default(false)
+  emailVerifyToken  String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workspaces    WorkspaceMember[]
+  shortLinks    ShortLink[]
+  activityLogs  ActivityLog[]
+
+  @@index([email])
+}
+
+// ============================================
+// CUSTOM DOMAINS
+// ============================================
+
+model Domain {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  domain          String   @unique
+
+  status          String   @default("pending")
+  verificationType String  @default("cname")
+  verificationToken String
+  verifiedAt      DateTime?
+  lastCheckAt     DateTime?
+  checkAttempts   Int      @default(0)
+
+  sslStatus       String   @default("pending")
+  sslExpiresAt    DateTime?
+
+  isDefault       Boolean  @default(false)
+  notFoundUrl     String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  shortLinks      ShortLink[]
+
+  @@index([domain])
+  @@index([workspaceId])
+  @@index([status])
+}
+
+// ============================================
+// FOLDERS & TAGS
+// ============================================
+
+model Folder {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  color       String?
+  icon        String?
+
+  parentId    String?
+  parent      Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Folder[] @relation("FolderHierarchy")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  shortLinks  ShortLink[]
+
+  @@unique([workspaceId, name, parentId])
+  @@index([workspaceId])
+  @@index([parentId])
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name        String
+  color       String   @default("#6366f1")
+
+  createdAt   DateTime @default(now())
+
+  links       LinkTag[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+}
+
+model LinkTag {
+  id          String    @id @default(cuid())
+  linkId      String
+  link        ShortLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  tagId       String
+  tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([linkId, tagId])
+  @@index([linkId])
+  @@index([tagId])
+}
+
+// ============================================
+// SHORT LINKS
+// ============================================
+
+model ShortLink {
+  id            String   @id @default(cuid())
+  shortCode     String
+  longUrl       String
+  title         String?
+  description   String?
+
+  workspaceId   String?
+  workspace     Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  userId        String?
+  user          User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  domainId      String?
+  domain        Domain?    @relation(fields: [domainId], references: [id], onDelete: SetNull)
+
+  folderId      String?
+  folder        Folder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  redirectType  Int        @default(302)
+
+  status        String     @default("active")
+  startsAt      DateTime?
+  expiresAt     DateTime?
+
+  password      String?
+
+  iosScheme     String?
+  iosAppStore   String?
+  androidScheme String?
+  androidPlay   String?
+
+  utmSource     String?
+  utmMedium     String?
+  utmCampaign   String?
+  utmTerm       String?
+  utmContent    String?
+
+  disabled      Boolean    @default(false)
+  archived      Boolean    @default(false)
+  clickCount    Int        @default(0)
+  lastClickedAt DateTime?
+
+  qrCodeId      String?    @unique
+  qrCode        QRCode?    @relation(fields: [qrCodeId], references: [id], onDelete: SetNull)
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  clickEvents   ClickEvent[]
+  tags          LinkTag[]
+
+  @@unique([shortCode, domainId])
+  @@index([shortCode])
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([domainId])
+  @@index([folderId])
+  @@index([status])
   @@index([createdAt])
 }
 
-// Click Events model for analytics
+// ============================================
+// QR CODES
+// ============================================
+
+model QRCode {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name          String?
+  type          String   @default("url")
+  content       String
+
+  foregroundColor String @default("#000000")
+  backgroundColor String @default("#FFFFFF")
+
+  logo          String?
+  logoSize      Int      @default(20)
+  logoPadding   Int      @default(5)
+
+  dotStyle      String   @default("square")
+  cornerStyle   String   @default("square")
+
+  frameStyle    String?
+  frameText     String?
+  frameColor    String   @default("#000000")
+
+  templateId    String?
+  template      QRTemplate? @relation(fields: [templateId], references: [id])
+
+  size          Int      @default(300)
+  format        String   @default("png")
+
+  scanCount     Int      @default(0)
+  lastScannedAt DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  shortLink     ShortLink?
+
+  @@index([workspaceId])
+  @@index([type])
+}
+
+model QRTemplate {
+  id              String   @id @default(cuid())
+  workspaceId     String?
+
+  name            String
+  description     String?
+  thumbnail       String?
+  config          String
+
+  isPublic        Boolean  @default(false)
+
+  createdAt       DateTime @default(now())
+
+  qrCodes         QRCode[]
+
+  @@index([workspaceId])
+}
+
+// ============================================
+// PAGES
+// ============================================
+
+model Page {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  slug          String
+  title         String
+  description   String?
+  type          String   @default("bio")
+
+  blocks        String   @default("[]")
+
+  theme         String   @default("default")
+  customCss     String?
+  backgroundImage String?
+  backgroundColor String  @default("#FFFFFF")
+
+  metaTitle     String?
+  metaDescription String?
+  ogImage       String?
+
+  status        String   @default("draft")
+  publishedAt   DateTime?
+
+  viewCount     Int      @default(0)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+  @@index([slug])
+  @@index([status])
+}
+
+// ============================================
+// CLICK EVENTS
+// ============================================
+
 model ClickEvent {
-  id          String   @id @default(cuid())
-  shortLinkId String
-  shortLink   ShortLink @relation(fields: [shortLinkId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  shortLinkId   String
+  shortLink     ShortLink @relation(fields: [shortLinkId], references: [id], onDelete: Cascade)
 
-  // Timestamp
-  clickedAt DateTime @default(now())
+  clickedAt     DateTime @default(now())
 
-  // Referrer info
-  referrer     String?
-  referrerHost String?
-  source       String? // direct, social, email, search, web
+  referrer      String?
+  referrerHost  String?
+  source        String?
 
-  // User Agent parsed data
-  userAgentRaw String?
-  deviceType   String? // mobile, desktop, tablet, bot, unknown
-  os           String? // Windows, macOS, iOS, Android, Linux, etc.
-  browser      String? // Chrome, Safari, Firefox, Edge, etc.
+  userAgentRaw  String?
+  deviceType    String?
+  os            String?
+  browser       String?
 
-  // Geographic (optional)
-  country String?
-  city    String?
+  country       String?
+  region        String?
+  city          String?
 
-  // Privacy - hashed IP
-  ipHash String?
+  ipHash        String?
 
-  // Bot detection
-  isBot Boolean @default(false)
+  isBot         Boolean  @default(false)
 
-  // Indexes for fast queries
   @@index([shortLinkId])
   @@index([clickedAt])
   @@index([shortLinkId, clickedAt])
   @@index([source])
   @@index([deviceType])
   @@index([country])
+  @@index([city])
+}
+
+// ============================================
+// API KEYS
+// ============================================
+
+model ApiKey {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name          String
+  keyHash       String   @unique
+  keyPrefix     String
+
+  scopes        String   @default("*")
+  rateLimit     Int      @default(100)
+
+  lastUsedAt    DateTime?
+  usageCount    Int      @default(0)
+
+  expiresAt     DateTime?
+
+  createdAt     DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([keyHash])
+}
+
+// ============================================
+// ACTIVITY LOG
+// ============================================
+
+model ActivityLog {
+  id            String   @id @default(cuid())
+  workspaceId   String?
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  action        String
+  resourceType  String
+  resourceId    String?
+
+  previousData  String?
+  newData       String?
+
+  ipAddress     String?
+  userAgent     String?
+
+  createdAt     DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([createdAt])
+}
+
+// ============================================
+// UTM PRESETS
+// ============================================
+
+model UtmPreset {
+  id            String   @id @default(cuid())
+  workspaceId   String
+
+  name          String
+  source        String?
+  medium        String?
+  campaign      String?
+  term          String?
+  content       String?
+
+  createdAt     DateTime @default(now())
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+}
+
+// ============================================
+// BULK IMPORT JOBS
+// ============================================
+
+model BulkImportJob {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  userId        String
+
+  status        String   @default("pending")
+
+  fileName      String
+  totalRows     Int      @default(0)
+  processedRows Int      @default(0)
+  successCount  Int      @default(0)
+  errorCount    Int      @default(0)
+
+  errors        String?
+
+  createdAt     DateTime @default(now())
+  completedAt   DateTime?
+
+  @@index([workspaceId])
+  @@index([status])
 }
