@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, Loader2, ExternalLink } from "lucide-react";
+import { Copy, Check, Loader2, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 
 interface ShortenedLink {
   id: string;
@@ -13,6 +13,8 @@ interface ShortenedLink {
 
 export function UrlShortener() {
   const [url, setUrl] = useState("");
+  const [customCode, setCustomCode] = useState("");
+  const [showOptions, setShowOptions] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shortenedLink, setShortenedLink] = useState<ShortenedLink | null>(null);
@@ -30,16 +32,27 @@ export function UrlShortener() {
       urlToShorten = "https://" + urlToShorten;
     }
 
+    // Validate custom code if provided
+    if (customCode && !/^[a-zA-Z0-9_-]{3,20}$/.test(customCode)) {
+      setError("Custom alias must be 3-20 characters (letters, numbers, hyphens, underscores only)");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
+      const payload: { longUrl: string; customCode?: string } = { longUrl: urlToShorten };
+      if (customCode.trim()) {
+        payload.customCode = customCode.trim();
+      }
+
       const response = await fetch("/api/links", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ longUrl: urlToShorten }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -50,6 +63,8 @@ export function UrlShortener() {
 
       setShortenedLink(data.data);
       setUrl("");
+      setCustomCode("");
+      setShowOptions(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -99,6 +114,32 @@ export function UrlShortener() {
             disabled={loading}
           />
         </div>
+
+        {/* Custom Alias Toggle */}
+        <button
+          type="button"
+          onClick={() => setShowOptions(!showOptions)}
+          className="flex items-center gap-1 text-sm text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors"
+        >
+          {showOptions ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          Custom alias (optional)
+        </button>
+
+        {/* Custom Alias Input */}
+        {showOptions && (
+          <div className="flex items-center gap-2 p-3 bg-[var(--primary-pale)] rounded-lg">
+            <span className="text-sm text-[var(--muted)]">lnk.fg/</span>
+            <input
+              type="text"
+              placeholder="my-custom-link"
+              className="flex-1 bg-transparent outline-none text-sm text-[var(--dark)]"
+              value={customCode}
+              onChange={(e) => setCustomCode(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+              disabled={loading}
+              maxLength={20}
+            />
+          </div>
+        )}
 
         {/* Error Message */}
         {error && (
