@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { UrlShortener } from "@/components/url-shortener";
 
 const features = [
   {
@@ -78,27 +79,7 @@ export default function LinkManagementPage() {
               </div>
             </div>
             <div className="relative">
-              <div className="bg-white rounded-2xl shadow-2xl border border-[var(--border)] p-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 p-3 bg-[var(--border)]/50 rounded-lg">
-                    <span className="text-sm text-[var(--muted)]">https://</span>
-                    <input
-                      type="text"
-                      placeholder="paste your long URL here"
-                      className="flex-1 bg-transparent outline-none text-sm"
-                      disabled
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 p-3 bg-[var(--primary-pale)] rounded-lg">
-                      <span className="text-sm font-medium text-[var(--primary)]">
-                        lnk.fg/your-brand
-                      </span>
-                    </div>
-                    <Button size="sm">Shorten</Button>
-                  </div>
-                </div>
-              </div>
+              <UrlShortener />
             </div>
           </div>
         </div>

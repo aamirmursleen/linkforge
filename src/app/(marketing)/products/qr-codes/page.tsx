@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { QRGenerator } from "@/components/qr-generator";
 
 const features = [
   {
@@ -85,15 +86,7 @@ export default function QRCodesPage() {
               </div>
             </div>
             <div className="relative flex justify-center">
-              <div className="bg-white rounded-2xl shadow-2xl border border-[var(--border)] p-8">
-                <div className="w-48 h-48 bg-[var(--dark)] rounded-xl flex items-center justify-center">
-                  <QrCode className="h-32 w-32 text-white" />
-                </div>
-                <div className="mt-4 text-center">
-                  <div className="text-sm font-medium text-[var(--dark)]">lnk.fg/menu</div>
-                  <div className="text-xs text-[var(--muted)]">1,234 scans</div>
-                </div>
-              </div>
+              <QRGenerator />
             </div>
           </div>
         </div>
