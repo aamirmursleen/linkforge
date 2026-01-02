@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// User model for authentication (simplified for now)
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String   // In production, use hashed passwords
+  role      String   @default("user") // user, admin
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  shortLinks ShortLink[]
+}
+
+// Short Links model
+model ShortLink {
+  id          String   @id @default(cuid())
+  shortCode   String   @unique
+  longUrl     String
+  title       String?
+  description String?
+
+  // Ownership
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Status
+  disabled  Boolean   @default(false)
+  expiresAt DateTime?
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  clickEvents ClickEvent[]
+
+  // Indexes
+  @@index([shortCode])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Click Events model for analytics
+model ClickEvent {
+  id          String   @id @default(cuid())
+  shortLinkId String
+  shortLink   ShortLink @relation(fields: [shortLinkId], references: [id], onDelete: Cascade)
+
+  // Timestamp
+  clickedAt DateTime @default(now())
+
+  // Referrer info
+  referrer     String?
+  referrerHost String?
+  source       String? // direct, social, email, search, web
+
+  // User Agent parsed data
+  userAgentRaw String?
+  deviceType   String? // mobile, desktop, tablet, bot, unknown
+  os           String? // Windows, macOS, iOS, Android, Linux, etc.
+  browser      String? // Chrome, Safari, Firefox, Edge, etc.
+
+  // Geographic (optional)
+  country String?
+  city    String?
+
+  // Privacy - hashed IP
+  ipHash String?
+
+  // Bot detection
+  isBot Boolean @default(false)
+
+  // Indexes for fast queries
+  @@index([shortLinkId])
+  @@index([clickedAt])
+  @@index([shortLinkId, clickedAt])
+  @@index([source])
+  @@index([deviceType])
+  @@index([country])
+}
