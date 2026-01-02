@@ -43,7 +43,7 @@ export function QRGenerator() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ url: urlToUse, title: "QR Code Link" }),
+        body: JSON.stringify({ longUrl: urlToUse, title: "QR Code Link" }),
       });
 
       const data = await response.json();
@@ -54,8 +54,8 @@ export function QRGenerator() {
 
       setGeneratedQR({
         url: urlToUse,
-        shortUrl: data.shortUrl,
-        shortCode: data.shortCode,
+        shortUrl: data.data.shortUrl,
+        shortCode: data.data.shortCode,
       });
       setUrl("");
     } catch (err) {

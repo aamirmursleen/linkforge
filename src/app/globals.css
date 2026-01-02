@@ -2,6 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CSS Variables */
+:root {
+  /* Primary Purple */
+  --primary: #4C00FF;
+  --primary-hover: #3D00CC;
+  --primary-light: #CBC2FF;
+  --primary-pale: #EDE5FF;
+
+  /* Dark Purple */
+  --dark: #26065D;
+  --dark-hover: #1A0440;
+
+  /* Accent */
+  --accent: #FF5252;
+  --accent-hover: #E64545;
+
+  /* Neutral */
+  --background: #FFFFFF;
+  --foreground: #130032;
+  --muted: #6B7280;
+  --muted-foreground: #9CA3AF;
+  --border: #E5E7EB;
+
+  /* Semantic */
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+}
+
 /* Base Styles */
 @layer base {
   * {
@@ -22,6 +51,10 @@
 @layer components {
   .container {
     @apply mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8;
+  }
+
+  .section {
+    @apply py-16 md:py-24;
   }
 }
 

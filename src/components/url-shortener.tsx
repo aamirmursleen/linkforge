@@ -39,7 +39,7 @@ export function UrlShortener() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ url: urlToShorten }),
+        body: JSON.stringify({ longUrl: urlToShorten }),
       });
 
       const data = await response.json();
@@ -48,7 +48,7 @@ export function UrlShortener() {
         throw new Error(data.error || "Failed to shorten URL");
       }
 
-      setShortenedLink(data);
+      setShortenedLink(data.data);
       setUrl("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
