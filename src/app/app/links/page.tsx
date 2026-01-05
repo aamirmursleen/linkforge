@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SetupBanner } from "@/components/setup-banner";
 import {
   Link2,
   Plus,
@@ -59,6 +60,8 @@ export default function LinksPage() {
       <AppHeader title="Links" />
 
       <div className="p-4 lg:p-6 space-y-6">
+        <SetupBanner />
+
         {/* Actions Bar */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
           <div className="relative flex-1 max-w-md">

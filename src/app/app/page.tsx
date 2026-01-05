@@ -13,6 +13,7 @@ import { AppHeader } from "@/components/app/app-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SetupBanner } from "@/components/setup-banner";
 
 const stats = [
   {
@@ -78,6 +79,9 @@ export default function DashboardPage() {
       <AppHeader title="Dashboard" />
 
       <div className="p-4 lg:p-6 space-y-6">
+        {/* Setup Banner - shows when database not configured */}
+        <SetupBanner />
+
         {/* Welcome Banner */}
         <div className="bg-gradient-to-r from-[var(--primary)] to-[var(--dark)] rounded-xl p-6 text-white">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
