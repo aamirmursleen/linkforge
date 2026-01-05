@@ -166,8 +166,25 @@ export async function POST(request: NextRequest) {
         createdAt: shortLink.createdAt,
       },
     }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating link:", error);
+
+    // Check for database configuration errors
+    if (error.message?.includes("Database not configured") ||
+        error.message?.includes("DATABASE_URL")) {
+      return NextResponse.json({
+        error: "Database not configured. Please set up PostgreSQL database on Vercel.",
+        setup: "Go to Vercel Dashboard → Storage → Create Database → Postgres"
+      }, { status: 503 });
+    }
+
+    // Check for connection errors
+    if (error.code === "ECONNREFUSED" || error.code === "ENOTFOUND") {
+      return NextResponse.json({
+        error: "Cannot connect to database. Please check your DATABASE_URL."
+      }, { status: 503 });
+    }
+
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -246,8 +263,23 @@ export async function GET(request: NextRequest) {
       })),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching links:", error);
+
+    if (error.message?.includes("Database not configured") ||
+        error.message?.includes("DATABASE_URL")) {
+      return NextResponse.json({
+        error: "Database not configured. Please set up PostgreSQL database on Vercel.",
+        setup: "Go to Vercel Dashboard → Storage → Create Database → Postgres"
+      }, { status: 503 });
+    }
+
+    if (error.code === "ECONNREFUSED" || error.code === "ENOTFOUND") {
+      return NextResponse.json({
+        error: "Cannot connect to database. Please check your DATABASE_URL."
+      }, { status: 503 });
+    }
+
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
