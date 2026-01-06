@@ -57,8 +57,9 @@ const hours = ["12a", "2a", "4a", "6a", "8a", "10a", "12p", "2p", "4p", "6p", "8
 
 // Country flags mapping
 const countryFlags: Record<string, string> = {
-  US: "🇺🇸", GB: "🇬🇧", DE: "🇩🇪", CA: "🇨🇦", AU: "🇦🇺", FR: "🇫🇷",
-  IN: "🇮🇳", BR: "🇧🇷", JP: "🇯🇵", MX: "🇲🇽", Unknown: "🌍",
+  "United States": "🇺🇸", "United Kingdom": "🇬🇧", Germany: "🇩🇪", Canada: "🇨🇦",
+  Australia: "🇦🇺", France: "🇫🇷", India: "🇮🇳", Brazil: "🇧🇷",
+  Japan: "🇯🇵", Mexico: "🇲🇽", Unknown: "🌍",
 };
 
 // Device icons
@@ -88,68 +89,66 @@ const sourceColors: Record<string, string> = {
   Web: "bg-gray-500",
 };
 
-interface AnalyticsData {
-  dateRange: {
-    start: string;
-    end: string;
-    range: string;
-  };
-  summary: {
-    totalClicks: number;
-    clicksChange: number;
-    uniqueVisitors: number;
-    visitorsChange: number;
-    qrScans: number;
-    qrChange: number;
-    totalLinks: number;
-    activeLinks: number;
-  };
-  clicksOverTime: Array<{ date: string; clicks: number; qrScans: number }>;
-  topLinks: Array<{
-    id: string;
-    shortCode: string;
-    title: string;
-    longUrl: string;
-    clicks: number;
-    qrScans: number;
-  }>;
-  devices: Array<{ device: string; count: number; percentage: number }>;
-  browsers: Array<{ browser: string; count: number; percentage: number }>;
-  operatingSystems: Array<{ os: string; count: number; percentage: number }>;
-  countries: Array<{ country: string; count: number; percentage: number }>;
-  sources: Array<{ source: string; category: string; count: number; percentage: number }>;
-  sourceCategories: Array<{ category: string; count: number; percentage: number }>;
-  referrers: Array<{ referrer: string; count: number; percentage: number }>;
-  heatmap: number[][];
-  peakTime: { day: string; hour: number; clicks: number };
-}
-
 export default function AnalyticsPage() {
   const [selectedRange, setSelectedRange] = useState("30d");
-  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const fetchAnalytics = async (range: string) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch(`/api/analytics?range=${range}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch analytics");
+      const res = await fetch(`/api/analytics?range=${range}`);
+      const result = await res.json();
+      if (result.success) {
+        setData(result.data);
+      } else {
+        // Fall back to empty data structure for new users
+        setData(getEmptyData(range));
       }
-      const result = await response.json();
-      setData(result.data);
       setLastUpdated(new Date());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+    } catch (error) {
+      console.error("Failed to fetch analytics:", error);
+      // Fall back to empty data structure
+      setData(getEmptyData(range));
     } finally {
       setLoading(false);
     }
   };
+
+  // Empty data structure for new users
+  function getEmptyData(range: string) {
+    return {
+      dateRange: {
+        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        end: new Date().toISOString(),
+        range,
+      },
+      summary: {
+        totalClicks: 0,
+        clicksChange: 0,
+        uniqueVisitors: 0,
+        visitorsChange: 0,
+        qrScans: 0,
+        qrChange: 0,
+        totalLinks: 0,
+        activeLinks: 0,
+      },
+      clicksOverTime: [],
+      topLinks: [],
+      devices: [],
+      browsers: [],
+      operatingSystems: [],
+      countries: [],
+      sources: [],
+      sourceCategories: [],
+      referrers: [],
+      heatmap: Array.from({ length: 7 }, () => Array.from({ length: 12 }, () => 0)),
+      peakTime: { day: "N/A", hour: 0, clicks: 0 },
+    };
+  }
 
   useEffect(() => {
     fetchAnalytics(selectedRange);
@@ -189,24 +188,9 @@ export default function AnalyticsPage() {
     );
   }
 
-  if (error) {
-    return (
-      <>
-        <AppHeader title="Analytics" />
-        <div className="flex items-center justify-center h-96">
-          <div className="flex flex-col items-center gap-4">
-            <AlertCircle className="h-8 w-8 text-red-500" />
-            <p className="text-red-500">{error}</p>
-            <Button onClick={() => fetchAnalytics(selectedRange)}>Try Again</Button>
-          </div>
-        </div>
-      </>
-    );
-  }
-
   if (!data) return null;
 
-  const maxClicks = Math.max(...data.clicksOverTime.map((d) => d.clicks), 1);
+  const maxClicks = Math.max(...data.clicksOverTime.map((d: any) => d.clicks), 1);
 
   return (
     <>
@@ -373,11 +357,11 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="h-72 flex items-end gap-1 p-4 bg-[var(--border)]/20 rounded-lg overflow-x-auto">
-                {data.clicksOverTime.slice(-14).map((item, i) => (
+                {data.clicksOverTime.slice(-14).map((item: any, i: number) => (
                   <div key={i} className="flex-1 min-w-[30px] flex flex-col items-center gap-1 group cursor-pointer">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-[var(--dark)] text-white text-xs px-2 py-1 rounded mb-2 whitespace-nowrap z-10">
-                      <div>{item.clicks} clicks</div>
-                      <div>{item.qrScans} scans</div>
+                      <div>{Math.round(item.clicks)} clicks</div>
+                      <div>{Math.round(item.qrScans)} scans</div>
                     </div>
                     <div
                       className="w-full flex flex-col gap-0.5 transition-all"
@@ -501,15 +485,15 @@ export default function AnalyticsPage() {
                     </div>
                   ))}
                 </div>
-                {data.heatmap.map((row, dayIndex) => (
+                {data.heatmap.map((row: number[], dayIndex: number) => (
                   <div key={dayIndex} className="flex items-center mb-1">
                     <div className="w-12 text-xs text-[var(--muted)] font-medium">{days[dayIndex]}</div>
                     <div className="flex-1 flex gap-0.5">
-                      {row.map((value, hourIndex) => (
+                      {row.map((value: number, hourIndex: number) => (
                         <div
                           key={hourIndex}
                           className={`flex-1 h-6 rounded cursor-pointer hover:ring-2 hover:ring-[var(--primary)] transition-all ${getHeatmapColor(value)}`}
-                          title={`${days[dayIndex]} ${hourIndex}:00 - ${value} clicks`}
+                          title={`${days[dayIndex]} ${hourIndex * 2}:00 - ${value} clicks`}
                         />
                       ))}
                     </div>
@@ -535,7 +519,7 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {data.countries.slice(0, 6).map((country) => (
+                {data.countries.slice(0, 6).map((country: any) => (
                   <div key={country.country} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--border)]/30 transition-colors">
                     <span className="text-xl">{countryFlags[country.country] || "🌍"}</span>
                     <div className="flex-1 min-w-0">
@@ -567,7 +551,7 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {data.devices.map((device) => {
+                {data.devices.map((device: any) => {
                   const Icon = deviceIcons[device.device] || Globe;
                   const color = deviceColors[device.device] || "bg-gray-500";
                   return (
@@ -607,7 +591,7 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {data.browsers.map((browser, index) => (
+                {data.browsers.map((browser: any, index: number) => (
                   <div key={browser.browser} className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                       <span className="text-xs font-bold text-white">{index + 1}</span>
@@ -637,7 +621,7 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {data.operatingSystems.map((os, index) => (
+                {data.operatingSystems.map((os: any) => (
                   <div key={os.os} className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
                       <span className="text-xs font-bold text-white">{os.os.slice(0, 2)}</span>
@@ -669,7 +653,7 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {data.sourceCategories.map((source) => {
+                {data.sourceCategories.map((source: any) => {
                   const color = sourceColors[source.category] || "bg-gray-500";
                   return (
                     <div key={source.category} className="flex items-center gap-3 p-3 rounded-lg hover:bg-[var(--border)]/30 transition-colors">
@@ -703,7 +687,7 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {data.referrers.slice(0, 6).map((referrer, index) => (
+                {data.referrers.slice(0, 6).map((referrer: any, index: number) => (
                   <div key={referrer.referrer} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--border)]/30 transition-colors">
                     <div className="h-8 w-8 rounded-full bg-[var(--primary-pale)] flex items-center justify-center text-sm font-semibold text-[var(--primary)]">
                       {index + 1}
@@ -740,7 +724,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {data.topLinks.map((link, index) => (
+              {data.topLinks.map((link: any, index: number) => (
                 <div
                   key={link.id}
                   className="p-4 rounded-xl border border-[var(--border)] hover:border-[var(--primary)] hover:shadow-md transition-all cursor-pointer group"
@@ -753,15 +737,15 @@ export default function AnalyticsPage() {
                       <div>
                         <div className="font-semibold text-[var(--dark)] mb-1">{link.title}</div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-[var(--primary)]">/r/{link.shortCode}</span>
+                          <span className="text-sm text-[var(--primary)]">lnkfrg.co/{link.shortCode}</span>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              copyLink(`${window.location.origin}/r/${link.shortCode}`);
+                              copyLink(`https://lnkfrg.co/${link.shortCode}`);
                             }}
                             className="opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            {copiedLink === `${window.location.origin}/r/${link.shortCode}` ? (
+                            {copiedLink === `https://lnkfrg.co/${link.shortCode}` ? (
                               <Check className="h-4 w-4 text-green-500" />
                             ) : (
                               <Copy className="h-4 w-4 text-[var(--muted)] hover:text-[var(--dark)]" />

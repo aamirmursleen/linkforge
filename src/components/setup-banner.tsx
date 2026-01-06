@@ -6,6 +6,7 @@ import { AlertTriangle, Database, ExternalLink, CheckCircle2 } from "lucide-reac
 interface SetupStatus {
   status: string;
   database: boolean;
+  urlConfigured?: boolean;
   message: string;
   setup?: {
     steps: string[];

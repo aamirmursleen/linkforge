@@ -54,8 +54,8 @@ const developers = [
 ];
 
 const resources = [
-  { title: "Blog", href: "/resources", description: "Tips and best practices", icon: Newspaper },
-  { title: "Help Center", href: "/resources", description: "Guides and answers", icon: HelpCircle },
+  { title: "Features Guide", href: "/features", description: "All features explained", icon: Book },
+  { title: "Help Center", href: "/resources", description: "Tips and best practices", icon: HelpCircle },
 ];
 
 export function Header() {

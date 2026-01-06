@@ -481,3 +481,130 @@ model BulkImportJob {
   @@index([workspaceId])
   @@index([status])
 }
+
+// ============================================
+// AI AGENT - KNOWLEDGE BASE
+// ============================================
+
+model KBDocument {
+  id            String   @id @default(cuid())
+
+  filePath      String   @unique
+  title         String
+  content       String
+  contentHash   String
+
+  category      String?
+  section       String?
+
+  chunkIndex    Int      @default(0)
+  totalChunks   Int      @default(1)
+
+  metadata      String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category])
+  @@index([title])
+}
+
+// ============================================
+// AI AGENT - CHAT SESSIONS
+// ============================================
+
+model AIChatSession {
+  id            String   @id @default(cuid())
+
+  userId        String?
+  sessionId     String   @unique
+
+  title         String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  messages      AIChatMessage[]
+
+  @@index([userId])
+  @@index([sessionId])
+}
+
+model AIChatMessage {
+  id            String   @id @default(cuid())
+
+  sessionId     String
+  session       AIChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  role          String
+  content       String
+
+  toolCalls     String?
+  toolResults   String?
+
+  sources       String?
+
+  feedbackRating Int?
+  feedbackText  String?
+
+  latencyMs     Int?
+  tokenCount    Int?
+
+  createdAt     DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+// ============================================
+// AI AGENT - TOOL EXECUTION LOG
+// ============================================
+
+model AIToolLog {
+  id            String   @id @default(cuid())
+
+  sessionId     String?
+  userId        String?
+
+  toolName      String
+  toolInput     String
+  toolOutput    String?
+
+  success       Boolean  @default(true)
+  errorMessage  String?
+
+  executionMs   Int?
+
+  ipAddress     String?
+  userAgent     String?
+
+  createdAt     DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([toolName])
+  @@index([createdAt])
+}
+
+// ============================================
+// AI AGENT - FAQ CACHE
+// ============================================
+
+model AIFaqCache {
+  id            String   @id @default(cuid())
+
+  questionHash  String   @unique
+  question      String
+  answer        String
+
+  sources       String?
+
+  hitCount      Int      @default(0)
+  lastHitAt     DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([questionHash])
+  @@index([hitCount])
+}

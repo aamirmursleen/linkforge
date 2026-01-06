@@ -57,7 +57,7 @@ const developers = [
 ];
 
 const resources = [
-  { title: "Blog", href: "/resources", icon: Newspaper },
+  { title: "Features Guide", href: "/features", icon: Book },
   { title: "Help Center", href: "/resources", icon: HelpCircle },
 ];
 

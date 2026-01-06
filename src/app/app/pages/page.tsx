@@ -84,69 +84,8 @@ interface Page {
   createdAt: string;
 }
 
-// Mock data
-const mockPages: Page[] = [
-  {
-    id: "1",
-    slug: "johndoe",
-    title: "John Doe",
-    description: "Digital Creator & Developer",
-    type: "bio",
-    status: "published",
-    theme: "ocean",
-    blocks: [
-      {
-        id: "b1",
-        type: "header",
-        content: {
-          title: "John Doe",
-          subtitle: "Digital Creator & Developer",
-          bio: "Building cool stuff on the internet",
-          avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=John",
-        },
-      },
-      {
-        id: "b2",
-        type: "link",
-        content: { title: "My Portfolio", url: "https://example.com", icon: "🌐" },
-      },
-      {
-        id: "b3",
-        type: "link",
-        content: { title: "Latest Project", url: "https://example.com/project", icon: "🚀" },
-      },
-      {
-        id: "b4",
-        type: "social",
-        content: {
-          links: [
-            { platform: "twitter", url: "https://twitter.com" },
-            { platform: "instagram", url: "https://instagram.com" },
-            { platform: "linkedin", url: "https://linkedin.com" },
-            { platform: "github", url: "https://github.com" },
-          ],
-        },
-      },
-    ],
-    viewCount: 1243,
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "2",
-    slug: "startup",
-    title: "Startup Landing",
-    description: "Product launch page",
-    type: "landing",
-    status: "draft",
-    theme: "sunset",
-    blocks: [],
-    viewCount: 0,
-    createdAt: "2024-01-10",
-  },
-];
-
 export default function PagesPage() {
-  const [pages, setPages] = useState<Page[]>(mockPages);
+  const [pages, setPages] = useState<Page[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);

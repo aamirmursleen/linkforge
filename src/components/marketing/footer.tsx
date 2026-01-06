@@ -22,9 +22,9 @@ const footerLinks = {
     { name: "Changelog", href: "/developers" },
   ],
   Resources: [
-    { name: "Blog", href: "/resources" },
+    { name: "Features Guide", href: "/features" },
     { name: "Help Center", href: "/resources" },
-    { name: "Guides", href: "/resources" },
+    { name: "Guides", href: "/features" },
     { name: "Webinars", href: "/resources" },
   ],
   Company: [

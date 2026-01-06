@@ -13,18 +13,18 @@ import { Badge } from "@/components/ui/badge";
 
 const resources = [
   {
-    icon: Newspaper,
-    title: "Blog",
-    description: "Latest news, tips, and best practices for link management.",
-    href: "/resources",
-    count: "50+ articles",
+    icon: Book,
+    title: "Features Guide",
+    description: "Complete guide to all LinkForge features with step-by-step instructions.",
+    href: "/features",
+    count: "6 features",
   },
   {
-    icon: Book,
-    title: "Guides",
+    icon: Lightbulb,
+    title: "How to Use",
     description: "Step-by-step tutorials for getting the most out of LinkForge.",
-    href: "/resources",
-    count: "20+ guides",
+    href: "/features",
+    count: "5+ guides",
   },
   {
     icon: Video,

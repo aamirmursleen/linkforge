@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { getDateRange } from "@/lib/analytics";
 
+// Force dynamic rendering to avoid static generation issues
+export const dynamic = "force-dynamic";
+
 // GET /api/analytics/geo - Get geographic analytics (country/city level)
 export async function GET(request: NextRequest) {
   try {

@@ -1,20 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool, neonConfig } from "@neondatabase/serverless";
-
-// Enable WebSocket for Neon in serverless environments
-neonConfig.webSocketConstructor = typeof WebSocket !== "undefined" ? WebSocket : undefined;
+import pg from "pg";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
 function createPrismaClient() {
-  // Check for Vercel Postgres, Neon, or standard DATABASE_URL
-  const connectionString =
-    process.env.POSTGRES_URL ||
-    process.env.POSTGRES_PRISMA_URL ||
-    process.env.DATABASE_URL;
+  // Check for DATABASE_URL
+  const connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
     console.error("DATABASE_URL is not set. Please configure your database.");
@@ -32,7 +26,7 @@ function createPrismaClient() {
   }
 
   try {
-    const pool = new Pool({ connectionString });
+    const pool = new pg.Pool({ connectionString });
     const adapter = new PrismaPg(pool);
 
     return new PrismaClient({
@@ -53,5 +47,5 @@ export default prisma;
 
 // Helper to check if database is configured
 export function isDatabaseConfigured(): boolean {
-  return !!(process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL);
+  return !!process.env.DATABASE_URL;
 }

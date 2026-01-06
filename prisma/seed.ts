@@ -1,11 +1,10 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "@neondatabase/serverless";
+import pg from "pg";
 
 const connectionString =
-  process.env.POSTGRES_URL ||
-  process.env.POSTGRES_PRISMA_URL ||
+  process.env.DIRECT_URL ||
   process.env.DATABASE_URL;
 
 if (!connectionString) {
@@ -13,7 +12,7 @@ if (!connectionString) {
   process.exit(1);
 }
 
-const pool = new Pool({ connectionString });
+const pool = new pg.Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 

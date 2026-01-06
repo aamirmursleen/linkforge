@@ -95,36 +95,16 @@ const FRAME_STYLES = [
   { id: "rounded", name: "Rounded Border" },
 ];
 
-// Mock QR codes data
-const mockQRCodes = [
-  {
-    id: "1",
-    name: "Restaurant Menu",
-    type: "url",
-    content: "https://restaurant.com/menu",
-    scanCount: 523,
-    createdAt: "2024-01-10",
-    style: { fgColor: "#000000", bgColor: "#FFFFFF" },
-  },
-  {
-    id: "2",
-    name: "Business Card",
-    type: "vcard",
-    content: "BEGIN:VCARD\nVERSION:3.0\nN:Doe;John;;;\nFN:John Doe\nEND:VCARD",
-    scanCount: 156,
-    createdAt: "2024-01-08",
-    style: { fgColor: "#2563eb", bgColor: "#FFFFFF" },
-  },
-  {
-    id: "3",
-    name: "Office WiFi",
-    type: "wifi",
-    content: "WIFI:T:WPA;S:OfficeNet;P:secret123;;",
-    scanCount: 892,
-    createdAt: "2024-01-05",
-    style: { fgColor: "#7c3aed", bgColor: "#FFFFFF" },
-  },
-];
+// Start with empty QR codes list for new users
+interface QRCodeItem {
+  id: string;
+  name: string;
+  type: string;
+  content: string;
+  scanCount: number;
+  createdAt: string;
+  style: { fgColor: string; bgColor: string };
+}
 
 interface QRFormData {
   type: string;
@@ -202,7 +182,7 @@ export default function QRCodesPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [formData, setFormData] = useState<QRFormData>(defaultFormData);
   const [activeTab, setActiveTab] = useState("content");
-  const [qrCodes, setQRCodes] = useState(mockQRCodes);
+  const [qrCodes, setQRCodes] = useState<QRCodeItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [copied, setCopied] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
