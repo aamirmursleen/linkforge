@@ -2,216 +2,395 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Link2,
-  QrCode,
-  BarChart3,
-  Plug,
-  FileText,
-  Building2,
-  Users,
-  ShoppingCart,
-  Megaphone,
-  Code,
-  Book,
-  Newspaper,
-  HelpCircle,
   Search,
   Menu,
+  X,
+  ChevronDown,
+  Sparkles,
+  QrCode,
+  BarChart3,
+  FileText,
+  Plug,
+  Code,
+  Book,
+  HelpCircle,
+  Zap,
 } from "lucide-react";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { MobileNav } from "./mobile-nav";
-import { SearchModal } from "./search-modal";
 
 const products = [
-  { title: "Link Management", href: "/products/link-management", description: "Create branded short links", icon: Link2 },
-  { title: "QR Codes", href: "/products/qr-codes", description: "Generate dynamic QR codes", icon: QrCode },
-  { title: "Analytics", href: "/products/analytics", description: "Track clicks and insights", icon: BarChart3 },
-  { title: "Integrations", href: "/products/integrations", description: "Connect with your tools", icon: Plug },
-  { title: "Pages", href: "/products/pages", description: "Build landing pages", icon: FileText },
-];
-
-const solutions = [
-  { title: "Enterprise", href: "/solutions", description: "For large organizations", icon: Building2 },
-  { title: "Small Business", href: "/solutions", description: "For growing businesses", icon: Users },
-  { title: "E-commerce", href: "/solutions", description: "Drive sales with links", icon: ShoppingCart },
-  { title: "Marketing", href: "/solutions", description: "Measure campaigns", icon: Megaphone },
-];
-
-const developers = [
-  { title: "API Docs", href: "/developers", description: "Complete API reference", icon: Code },
-  { title: "SDKs", href: "/developers", description: "Official libraries", icon: Book },
+  { name: "Link Management", href: "/products/link-management", description: "Create branded short links", icon: Link2 },
+  { name: "QR Codes", href: "/products/qr-codes", description: "Generate dynamic QR codes", icon: QrCode },
+  { name: "Analytics", href: "/products/analytics", description: "Track clicks and insights", icon: BarChart3 },
+  { name: "Bio Pages", href: "/products/pages", description: "Build link-in-bio pages", icon: FileText },
+  { name: "Integrations", href: "/products/integrations", description: "Connect your tools", icon: Plug },
 ];
 
 const resources = [
-  { title: "Features Guide", href: "/features", description: "All features explained", icon: Book },
-  { title: "Help Center", href: "/resources", description: "Tips and best practices", icon: HelpCircle },
+  { name: "Features", href: "/features", description: "All features explained", icon: Zap },
+  { name: "Developers", href: "/developers", description: "API documentation", icon: Code },
+  { name: "Help Center", href: "/resources", description: "Guides & tutorials", icon: HelpCircle },
 ];
 
 export function Header() {
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [activeDropdown, setActiveDropdown] = React.useState<string | null>(null);
+  const pathname = usePathname();
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   React.useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 10);
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setSearchOpen(true);
-      }
+    setMobileOpen(false);
+    setActiveDropdown(null);
+  }, [pathname]);
+
+  React.useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
     };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [mobileOpen]);
+
+  const handleMouseEnter = (dropdown: string) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setActiveDropdown(dropdown);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setActiveDropdown(null);
+    }, 150);
+  };
 
   return (
     <>
-      <header
-        className={cn(
-          "sticky top-0 z-50 transition-all duration-200",
-          isScrolled
-            ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100"
-            : "bg-white"
-        )}
-      >
-        <div className="container">
-          <div className="flex h-16 items-center justify-between">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
-                <Link2 className="h-5 w-5 text-white" />
+      {/* Floating Navbar */}
+      <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4">
+        <nav
+          className={cn(
+            "mx-auto max-w-5xl transition-all duration-300 ease-out",
+            "rounded-full border",
+            "flex items-center justify-between",
+            "px-4 sm:px-6 h-14 sm:h-16",
+            isScrolled
+              ? "bg-white/90 backdrop-blur-xl shadow-lg shadow-black/5 border-gray-200/50"
+              : "bg-white/70 backdrop-blur-md border-gray-200/30"
+          )}
+        >
+          {/* Left - Logo */}
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-[var(--primary)] flex items-center justify-center shadow-lg shadow-[var(--primary)]/25">
+              <Link2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+            </div>
+            <span className="font-bold text-lg sm:text-xl text-[var(--dark)]">
+              LinkForge
+            </span>
+          </Link>
+
+          {/* Center - Navigation Links (Desktop) */}
+          <div className="hidden lg:flex items-center gap-1">
+            {/* Products Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => handleMouseEnter("products")}
+              onMouseLeave={handleMouseLeave}
+            >
+              <button
+                className={cn(
+                  "flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-full transition-all duration-200",
+                  activeDropdown === "products"
+                    ? "text-[var(--primary)] bg-[var(--primary-pale)]"
+                    : "text-[var(--muted)] hover:text-[var(--dark)] hover:bg-gray-100"
+                )}
+              >
+                Products
+                <ChevronDown className={cn(
+                  "h-4 w-4 transition-transform duration-200",
+                  activeDropdown === "products" && "rotate-180"
+                )} />
+              </button>
+
+              {/* Dropdown Menu */}
+              <div
+                className={cn(
+                  "absolute top-full left-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden transition-all duration-200",
+                  activeDropdown === "products"
+                    ? "opacity-100 translate-y-0 visible"
+                    : "opacity-0 -translate-y-2 invisible"
+                )}
+              >
+                <div className="p-2">
+                  {products.map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="h-9 w-9 rounded-lg bg-[var(--primary-pale)] flex items-center justify-center">
+                        <item.icon className="h-4 w-4 text-[var(--primary)]" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-[var(--dark)]">{item.name}</div>
+                        <div className="text-xs text-[var(--muted)]">{item.description}</div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
-              <span className="font-bold text-xl text-dark">LinkForge</span>
+            </div>
+
+            {/* Resources Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => handleMouseEnter("resources")}
+              onMouseLeave={handleMouseLeave}
+            >
+              <button
+                className={cn(
+                  "flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-full transition-all duration-200",
+                  activeDropdown === "resources"
+                    ? "text-[var(--primary)] bg-[var(--primary-pale)]"
+                    : "text-[var(--muted)] hover:text-[var(--dark)] hover:bg-gray-100"
+                )}
+              >
+                Resources
+                <ChevronDown className={cn(
+                  "h-4 w-4 transition-transform duration-200",
+                  activeDropdown === "resources" && "rotate-180"
+                )} />
+              </button>
+
+              {/* Dropdown Menu */}
+              <div
+                className={cn(
+                  "absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden transition-all duration-200",
+                  activeDropdown === "resources"
+                    ? "opacity-100 translate-y-0 visible"
+                    : "opacity-0 -translate-y-2 invisible"
+                )}
+              >
+                <div className="p-2">
+                  {resources.map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="h-9 w-9 rounded-lg bg-[var(--primary-pale)] flex items-center justify-center">
+                        <item.icon className="h-4 w-4 text-[var(--primary)]" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-[var(--dark)]">{item.name}</div>
+                        <div className="text-xs text-[var(--muted)]">{item.description}</div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Pricing Link */}
+            <Link
+              href="/pricing"
+              className={cn(
+                "relative px-4 py-2 text-sm font-medium rounded-full transition-all duration-200",
+                pathname === "/pricing"
+                  ? "text-[var(--primary)] bg-[var(--primary-pale)]"
+                  : "text-[var(--muted)] hover:text-[var(--dark)] hover:bg-gray-100"
+              )}
+            >
+              Pricing
+            </Link>
+          </div>
+
+          {/* Right - Actions */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Search Button (Desktop) */}
+            <button
+              className="hidden sm:flex h-9 w-9 items-center justify-center rounded-full text-[var(--muted)] hover:text-[var(--dark)] hover:bg-gray-100 transition-colors"
+              aria-label="Search"
+            >
+              <Search className="h-[18px] w-[18px]" />
+            </button>
+
+            {/* Login (Desktop) */}
+            <Link
+              href="/sign-in"
+              className="hidden sm:block text-sm font-medium text-[var(--muted)] hover:text-[var(--dark)] transition-colors px-3 py-2"
+            >
+              Log in
             </Link>
 
-            {/* Desktop Nav */}
-            <NavigationMenu className="hidden lg:flex">
-              <NavigationMenuList>
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger>Products</NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <div className="grid gap-2 p-4 w-[400px]">
-                      {products.map((item) => (
-                        <NavItem key={item.title} item={item} />
-                      ))}
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
+            {/* CTA Button */}
+            <Link
+              href="/sign-up"
+              className={cn(
+                "hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200",
+                "bg-[var(--primary)] text-white",
+                "hover:bg-[var(--primary-hover)] hover:shadow-lg hover:shadow-[var(--primary)]/25",
+                "active:scale-95"
+              )}
+            >
+              <Sparkles className="h-4 w-4" />
+              Get Started
+            </Link>
 
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger>Solutions</NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <div className="grid gap-2 p-4 w-[400px]">
-                      {solutions.map((item) => (
-                        <NavItem key={item.title} item={item} />
-                      ))}
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger>Developers</NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <div className="grid gap-2 p-4 w-[320px]">
-                      {developers.map((item) => (
-                        <NavItem key={item.title} item={item} />
-                      ))}
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <div className="grid gap-2 p-4 w-[320px]">
-                      {resources.map((item) => (
-                        <NavItem key={item.title} item={item} />
-                      ))}
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                  <Link href="/pricing" legacyBehavior passHref>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                      Pricing
-                    </NavigationMenuLink>
-                  </Link>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
-
-            {/* Right */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSearchOpen(true)}
-                className="hidden sm:flex"
-              >
-                <Search className="h-5 w-5" />
-              </Button>
-
-              <div className="hidden sm:flex items-center gap-2">
-                <Button variant="ghost" asChild>
-                  <Link href="/signin">Sign in</Link>
-                </Button>
-                <Button asChild>
-                  <Link href="/signup">Start free</Link>
-                </Button>
-              </div>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="lg:hidden"
-                onClick={() => setMobileOpen(true)}
-              >
-                <Menu className="h-6 w-6" />
-              </Button>
-            </div>
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className={cn(
+                "lg:hidden h-9 w-9 flex items-center justify-center rounded-full transition-colors",
+                mobileOpen
+                  ? "bg-[var(--primary)] text-white"
+                  : "text-[var(--muted)] hover:bg-gray-100"
+              )}
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
+            </button>
           </div>
-        </div>
+        </nav>
       </header>
 
-      <MobileNav open={mobileOpen} onOpenChange={setMobileOpen} />
-      <SearchModal open={searchOpen} onOpenChange={setSearchOpen} />
+      {/* Mobile Menu Overlay */}
+      <div
+        className={cn(
+          "fixed inset-0 z-40 lg:hidden transition-all duration-300",
+          mobileOpen ? "visible" : "invisible"
+        )}
+      >
+        {/* Backdrop */}
+        <div
+          className={cn(
+            "absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity duration-300",
+            mobileOpen ? "opacity-100" : "opacity-0"
+          )}
+          onClick={() => setMobileOpen(false)}
+        />
+
+        {/* Mobile Menu Panel */}
+        <div
+          className={cn(
+            "absolute top-20 left-4 right-4 max-h-[70vh] overflow-y-auto bg-white rounded-3xl shadow-2xl border border-gray-200/50 transition-all duration-300",
+            mobileOpen
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 -translate-y-4 pointer-events-none"
+          )}
+        >
+          {/* Products Section */}
+          <div className="p-4">
+            <div className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider px-3 mb-2">
+              Products
+            </div>
+            <div className="space-y-1">
+              {products.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  <div className="h-9 w-9 rounded-lg bg-[var(--primary-pale)] flex items-center justify-center">
+                    <item.icon className="h-4 w-4 text-[var(--primary)]" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-[var(--dark)]">{item.name}</div>
+                    <div className="text-xs text-[var(--muted)]">{item.description}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-gray-100 mx-4" />
+
+          {/* Resources Section */}
+          <div className="p-4">
+            <div className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider px-3 mb-2">
+              Resources
+            </div>
+            <div className="space-y-1">
+              {resources.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  <div className="h-9 w-9 rounded-lg bg-[var(--primary-pale)] flex items-center justify-center">
+                    <item.icon className="h-4 w-4 text-[var(--primary)]" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-[var(--dark)]">{item.name}</div>
+                    <div className="text-xs text-[var(--muted)]">{item.description}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-gray-100 mx-4" />
+
+          {/* Pricing */}
+          <div className="p-4">
+            <Link
+              href="/pricing"
+              className="flex items-center justify-between px-3 py-3 rounded-xl text-base font-medium text-[var(--dark)] hover:bg-gray-50 transition-colors"
+            >
+              Pricing
+              <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">
+                90% OFF
+              </span>
+            </Link>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-gray-100 mx-4" />
+
+          {/* Auth Buttons */}
+          <div className="p-4 space-y-2">
+            <Link
+              href="/sign-in"
+              className="flex items-center justify-center w-full px-4 py-3 rounded-xl text-base font-medium text-[var(--dark)] bg-gray-50 hover:bg-gray-100 transition-colors"
+            >
+              Log in
+            </Link>
+            <Link
+              href="/sign-up"
+              className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-base font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] transition-colors"
+            >
+              <Sparkles className="h-4 w-4" />
+              Get Started Free
+            </Link>
+          </div>
+        </div>
+      </div>
     </>
   );
 }
 
-function NavItem({ item }: { item: { title: string; href: string; description: string; icon: React.ElementType } }) {
-  const Icon = item.icon;
-  return (
-    <NavigationMenuLink asChild>
-      <Link
-        href={item.href}
-        className="flex items-center gap-3 rounded-lg p-3 hover:bg-gray-50 transition-colors"
-      >
-        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Icon className="h-5 w-5 text-primary" />
-        </div>
-        <div>
-          <div className="text-sm font-medium text-dark">{item.title}</div>
-          <div className="text-sm text-muted">{item.description}</div>
-        </div>
-      </Link>
-    </NavigationMenuLink>
-  );
+// Keep exports for backward compatibility
+export function MobileNav({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  return null;
+}
+
+export function SearchModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  return null;
 }
