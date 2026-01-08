@@ -311,6 +311,9 @@ export function getDateRange(range: string): { start: Date; end: Date } {
     case "90d":
       start.setDate(start.getDate() - 90);
       break;
+    case "365d":
+      start.setDate(start.getDate() - 365);
+      break;
     case "1y":
       start.setFullYear(start.getFullYear() - 1);
       break;

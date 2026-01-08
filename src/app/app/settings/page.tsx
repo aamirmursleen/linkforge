@@ -13,6 +13,10 @@ import {
   Shield,
   CreditCard,
   Trash2,
+  Users,
+  UserPlus,
+  Crown,
+  MoreHorizontal,
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -113,6 +117,84 @@ export default function SettingsPage() {
               </div>
             </div>
             <Button variant="outline">Create New Key</Button>
+          </CardContent>
+        </Card>
+
+
+        {/* Team Members */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-[var(--muted)]" />
+                <CardTitle>Team Members</CardTitle>
+              </div>
+              <Badge variant="secondary">3/10 members</Badge>
+            </div>
+            <CardDescription>
+              Invite team members to collaborate on your workspace
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Invite Form */}
+            <div className="flex gap-2">
+              <Input placeholder="colleague@company.com" type="email" className="flex-1" />
+              <Button>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Invite
+              </Button>
+            </div>
+
+            {/* Team List */}
+            <div className="space-y-3">
+              {[
+                { name: "You", email: "john@example.com", role: "Owner", isOwner: true },
+                { name: "Sarah Johnson", email: "sarah@company.com", role: "Admin", isOwner: false },
+                { name: "Mike Chen", email: "mike@company.com", role: "Member", isOwner: false },
+              ].map((member) => (
+                <div key={member.email} className="flex items-center justify-between p-3 rounded-lg border border-[var(--border)]">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-[var(--primary)] flex items-center justify-center text-white font-semibold">
+                      {member.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{member.name}</p>
+                        {member.isOwner && <Crown className="h-4 w-4 text-yellow-500" />}
+                      </div>
+                      <p className="text-sm text-[var(--muted)]">{member.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={member.role === "Owner" ? "default" : "secondary"}>
+                      {member.role}
+                    </Badge>
+                    {!member.isOwner && (
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pending Invites */}
+            <div className="pt-4 border-t border-[var(--border)]">
+              <p className="text-sm font-medium mb-3">Pending Invites</p>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+                    <Mail className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-medium">alex@company.com</p>
+                    <p className="text-sm text-[var(--muted)]">Invited 2 days ago</p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm">Resend</Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

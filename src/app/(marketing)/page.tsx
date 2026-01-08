@@ -21,8 +21,11 @@ import {
   Sparkles,
   Download,
   Loader2,
+  X,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const QRCodeSVG = dynamic(
   () => import("qrcode.react").then((mod) => mod.QRCodeSVG),
@@ -327,6 +330,174 @@ export default function HomePage() {
             {["Acme Corp", "Globex", "Initech", "Umbrella", "Stark Industries", "Wayne Enterprises"].map((name) => (
               <span key={name} className="text-lg font-bold text-gray-900 tracking-tight">{name}</span>
             ))}
+          </div>
+        </div>
+      </section>
+
+
+      {/* Competitor Comparison Section */}
+      <section className="py-20 bg-white">
+        <div className="container">
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <Badge className="mb-4 bg-green-100 text-green-700 border-green-200">
+              <TrendingUp className="w-3 h-3 mr-1" />
+              Save 98% vs Competitors
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold text-dark mb-4">
+              Why choose LinkForge over Bitly?
+            </h2>
+            <p className="text-lg text-muted">
+              Get all premium features at a fraction of the cost. One-time payment, lifetime access.
+            </p>
+          </div>
+
+          {/* Comparison Table */}
+          <div className="max-w-4xl mx-auto mb-12">
+            <div className="bg-white rounded-2xl border-2 border-primary shadow-xl overflow-hidden">
+              {/* Table Header */}
+              <div className="grid grid-cols-4 bg-gray-50 border-b border-gray-200">
+                <div className="p-4 font-semibold text-dark">Feature</div>
+                <div className="p-4 text-center bg-primary/10 border-x border-primary/20">
+                  <div className="font-bold text-primary">LinkForge</div>
+                  <div className="text-xs text-primary/70">Recommended</div>
+                </div>
+                <div className="p-4 text-center font-semibold text-gray-600">Bitly</div>
+                <div className="p-4 text-center font-semibold text-gray-600">Rebrandly</div>
+              </div>
+
+              {/* Price Row */}
+              <div className="grid grid-cols-4 border-b border-gray-100 bg-gradient-to-r from-green-50 to-white">
+                <div className="p-4 font-semibold text-dark flex items-center gap-2">
+                  Price
+                </div>
+                <div className="p-4 text-center bg-primary/5 border-x border-primary/10">
+                  <div className="text-2xl font-bold text-primary">$27</div>
+                  <div className="text-xs text-green-600 font-semibold">LIFETIME</div>
+                </div>
+                <div className="p-4 text-center">
+                  <div className="text-xl font-bold text-gray-700">$348</div>
+                  <div className="text-xs text-gray-500">/year</div>
+                </div>
+                <div className="p-4 text-center">
+                  <div className="text-xl font-bold text-gray-700">$468</div>
+                  <div className="text-xs text-gray-500">/year</div>
+                </div>
+              </div>
+
+              {/* Feature Rows */}
+              {[
+                { feature: "Unlimited Short Links", linkforge: true, bitly: false, rebrandly: false },
+                { feature: "Unlimited QR Codes", linkforge: true, bitly: false, rebrandly: false },
+                { feature: "Custom Domains", linkforge: "10 included", bitly: "1 ($199/yr)", rebrandly: "1 ($348/yr)" },
+                { feature: "Team Members", linkforge: "10 included", bitly: "Extra cost", rebrandly: "Extra cost" },
+                { feature: "Analytics Retention", linkforge: "365 days", bitly: "30 days", rebrandly: "90 days" },
+                { feature: "Bio Pages", linkforge: true, bitly: false, rebrandly: false },
+                { feature: "Password Protection", linkforge: true, bitly: "Paid only", rebrandly: "Paid only" },
+                { feature: "API Access", linkforge: true, bitly: "Paid only", rebrandly: "Paid only" },
+                { feature: "Link Expiration", linkforge: true, bitly: true, rebrandly: true },
+                { feature: "UTM Builder", linkforge: true, bitly: true, rebrandly: true },
+              ].map((row, index) => (
+                <div key={row.feature} className={`grid grid-cols-4 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} border-b border-gray-100 last:border-b-0`}>
+                  <div className="p-4 text-dark font-medium">{row.feature}</div>
+                  <div className="p-4 flex items-center justify-center bg-primary/5 border-x border-primary/10">
+                    {typeof row.linkforge === 'boolean' ? (
+                      row.linkforge ? (
+                        <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
+                          <Check className="h-4 w-4 text-green-600" />
+                        </div>
+                      ) : (
+                        <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center">
+                          <X className="h-4 w-4 text-red-500" />
+                        </div>
+                      )
+                    ) : (
+                      <span className="text-sm font-medium text-primary">{row.linkforge}</span>
+                    )}
+                  </div>
+                  <div className="p-4 flex items-center justify-center">
+                    {typeof row.bitly === 'boolean' ? (
+                      row.bitly ? (
+                        <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
+                          <Check className="h-4 w-4 text-green-600" />
+                        </div>
+                      ) : (
+                        <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center">
+                          <X className="h-4 w-4 text-red-500" />
+                        </div>
+                      )
+                    ) : (
+                      <span className="text-sm text-gray-600">{row.bitly}</span>
+                    )}
+                  </div>
+                  <div className="p-4 flex items-center justify-center">
+                    {typeof row.rebrandly === 'boolean' ? (
+                      row.rebrandly ? (
+                        <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
+                          <Check className="h-4 w-4 text-green-600" />
+                        </div>
+                      ) : (
+                        <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center">
+                          <X className="h-4 w-4 text-red-500" />
+                        </div>
+                      )
+                    ) : (
+                      <span className="text-sm text-gray-600">{row.rebrandly}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Savings Highlight */}
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-8 text-center text-white">
+              <div className="text-lg font-medium mb-2">5-Year Cost Comparison</div>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-white/20 rounded-xl p-4">
+                  <div className="text-3xl font-bold">$27</div>
+                  <div className="text-sm opacity-90">LinkForge</div>
+                </div>
+                <div className="bg-white/10 rounded-xl p-4">
+                  <div className="text-2xl font-bold">$1,740</div>
+                  <div className="text-sm opacity-80">Bitly</div>
+                </div>
+                <div className="bg-white/10 rounded-xl p-4">
+                  <div className="text-2xl font-bold">$2,340</div>
+                  <div className="text-sm opacity-80">Rebrandly</div>
+                </div>
+              </div>
+              <div className="text-2xl md:text-3xl font-bold mb-4">
+                Save $1,713+ with LinkForge
+              </div>
+              <Button size="lg" className="bg-white text-green-600 hover:bg-gray-100" asChild>
+                <Link href="/pricing">
+                  Get Lifetime Access - $27
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          {/* Switching from Bitly Banner */}
+          <div className="max-w-3xl mx-auto mt-8">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                  <Zap className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <div className="font-semibold text-dark">Switching from Bitly?</div>
+                  <div className="text-sm text-muted">Import all your links in one click. We make it easy.</div>
+                </div>
+              </div>
+              <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-100" asChild>
+                <Link href="/signup">
+                  Import from Bitly
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </section>
