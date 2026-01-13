@@ -94,7 +94,7 @@ function AnimatedCounter({ value, suffix = "" }: { value: number; suffix?: strin
   return <span className="tabular-nums">{value.toLocaleString()}{suffix}</span>;
 }
 
-function GlowingIcon({ icon: Icon, color }: { icon: React.ComponentType<{ className?: string }>; color: string }) {
+function GlowingIcon({ icon: Icon, color }: { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; color: string }) {
   return (
     <div className="relative">
       <div className="absolute inset-0 rounded-2xl blur-xl opacity-50" style={{ backgroundColor: color }} />
