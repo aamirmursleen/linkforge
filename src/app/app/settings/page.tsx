@@ -1,9 +1,4 @@
 import { AppHeader } from "@/components/app/app-header";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   User,
   Mail,
@@ -17,290 +12,183 @@ import {
   UserPlus,
   Crown,
   MoreHorizontal,
+  Settings,
+  Palette,
+  Code,
 } from "lucide-react";
 
-export default function SettingsPage() {
+// Glowing Icon Component
+function GlowingIcon({ icon: Icon, color }: { icon: any; color: string }) {
   return (
-    <>
-      <AppHeader title="Settings" />
-
-      <div className="p-4 lg:p-6 space-y-6 max-w-4xl">
-        {/* Profile */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-[var(--muted)]" />
-              <CardTitle>Profile</CardTitle>
-            </div>
-            <CardDescription>
-              Manage your personal information
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-full bg-[var(--primary)] flex items-center justify-center text-white text-xl font-semibold">
-                JD
-              </div>
-              <Button variant="outline">Change Avatar</Button>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">First Name</label>
-                <Input defaultValue="John" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Last Name</label>
-                <Input defaultValue="Doe" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Email</label>
-              <Input type="email" defaultValue="john@example.com" />
-            </div>
-            <Button>Save Changes</Button>
-          </CardContent>
-        </Card>
-
-        {/* Custom Domain */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-[var(--muted)]" />
-                <CardTitle>Custom Domain</CardTitle>
-              </div>
-              <Badge>Pro Feature</Badge>
-            </div>
-            <CardDescription>
-              Use your own domain for branded short links
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Domain</label>
-              <div className="flex gap-2">
-                <Input placeholder="links.yourdomain.com" />
-                <Button>Add Domain</Button>
-              </div>
-            </div>
-            <div className="p-4 rounded-lg bg-[var(--primary-pale)] text-sm">
-              <p className="font-medium text-[var(--dark)] mb-1">
-                How to set up your custom domain
-              </p>
-              <p className="text-[var(--muted)]">
-                Add a CNAME record pointing to <code className="bg-white px-1 rounded">cname.linkforge.com</code>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* API Keys */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Key className="h-5 w-5 text-[var(--muted)]" />
-              <CardTitle>API Keys</CardTitle>
-            </div>
-            <CardDescription>
-              Manage your API keys for integrations
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-lg border border-[var(--border)]">
-              <div>
-                <p className="font-medium">Production Key</p>
-                <p className="text-sm text-[var(--muted)]">lf_live_••••••••••••1234</p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">Copy</Button>
-                <Button variant="outline" size="sm">Regenerate</Button>
-              </div>
-            </div>
-            <Button variant="outline">Create New Key</Button>
-          </CardContent>
-        </Card>
-
-
-        {/* Team Members */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-[var(--muted)]" />
-                <CardTitle>Team Members</CardTitle>
-              </div>
-              <Badge variant="secondary">3/10 members</Badge>
-            </div>
-            <CardDescription>
-              Invite team members to collaborate on your workspace
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Invite Form */}
-            <div className="flex gap-2">
-              <Input placeholder="colleague@company.com" type="email" className="flex-1" />
-              <Button>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Invite
-              </Button>
-            </div>
-
-            {/* Team List */}
-            <div className="space-y-3">
-              {[
-                { name: "You", email: "john@example.com", role: "Owner", isOwner: true },
-                { name: "Sarah Johnson", email: "sarah@company.com", role: "Admin", isOwner: false },
-                { name: "Mike Chen", email: "mike@company.com", role: "Member", isOwner: false },
-              ].map((member) => (
-                <div key={member.email} className="flex items-center justify-between p-3 rounded-lg border border-[var(--border)]">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-[var(--primary)] flex items-center justify-center text-white font-semibold">
-                      {member.name.split(' ').map(n => n[0]).join('')}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{member.name}</p>
-                        {member.isOwner && <Crown className="h-4 w-4 text-yellow-500" />}
-                      </div>
-                      <p className="text-sm text-[var(--muted)]">{member.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={member.role === "Owner" ? "default" : "secondary"}>
-                      {member.role}
-                    </Badge>
-                    {!member.isOwner && (
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Pending Invites */}
-            <div className="pt-4 border-t border-[var(--border)]">
-              <p className="text-sm font-medium mb-3">Pending Invites</p>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-yellow-50 border border-yellow-200">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
-                    <Mail className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium">alex@company.com</p>
-                    <p className="text-sm text-[var(--muted)]">Invited 2 days ago</p>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm">Resend</Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notifications */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-[var(--muted)]" />
-              <CardTitle>Notifications</CardTitle>
-            </div>
-            <CardDescription>
-              Configure how you receive notifications
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {[
-              { label: "Email notifications", description: "Receive updates via email" },
-              { label: "Weekly reports", description: "Get weekly performance summaries" },
-              { label: "Link alerts", description: "Notify when links reach milestones" },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{item.label}</p>
-                  <p className="text-sm text-[var(--muted)]">{item.description}</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Security */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-[var(--muted)]" />
-              <CardTitle>Security</CardTitle>
-            </div>
-            <CardDescription>
-              Keep your account secure
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Two-factor authentication</p>
-                <p className="text-sm text-[var(--muted)]">Add an extra layer of security</p>
-              </div>
-              <Button variant="outline">Enable</Button>
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Change password</p>
-                <p className="text-sm text-[var(--muted)]">Update your password regularly</p>
-              </div>
-              <Button variant="outline">Change</Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Billing */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-[var(--muted)]" />
-              <CardTitle>Billing</CardTitle>
-            </div>
-            <CardDescription>
-              Manage your subscription and payment methods
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-lg bg-[var(--primary-pale)]">
-              <div>
-                <p className="font-medium text-[var(--dark)]">Free Plan</p>
-                <p className="text-sm text-[var(--muted)]">5 links/month • 2 QR codes/month</p>
-              </div>
-              <Button>Upgrade</Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Danger Zone */}
-        <Card className="border-red-200">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-red-500" />
-              <CardTitle className="text-red-600">Danger Zone</CardTitle>
-            </div>
-            <CardDescription>
-              Irreversible and destructive actions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Delete account</p>
-                <p className="text-sm text-[var(--muted)]">
-                  Permanently delete your account and all data
-                </p>
-              </div>
-              <Button variant="destructive">Delete Account</Button>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="relative h-10 w-10 flex items-center justify-center">
+      <div className={`absolute h-8 w-8 rounded-full ${color} opacity-40 blur-lg`} />
+      <div className={`relative h-10 w-10 rounded-xl ${color} bg-opacity-20 flex items-center justify-center backdrop-blur-sm border border-white/10`}>
+        <Icon className="h-5 w-5 text-white" />
       </div>
-    </>
+    </div>
+  );
+}
+
+export default function SettingsPage() {
+  const inputClass = "w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50";
+
+  return (
+    <div className="min-h-screen bg-[#0f0a1f]">
+      {/* Background Effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-600/20 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative z-10">
+        <AppHeader title="Settings" />
+
+        <div className="p-4 lg:p-6 space-y-6 max-w-4xl">
+          {/* Profile */}
+          <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <GlowingIcon icon={User} color="bg-violet-500" />
+              <div>
+                <h3 className="font-semibold text-white">Profile</h3>
+                <p className="text-sm text-gray-400">Manage your personal information</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white text-xl font-semibold">JD</div>
+                <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-gray-300 text-sm transition-colors">Change Avatar</button>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">First Name</label>
+                  <input defaultValue="John" className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Last Name</label>
+                  <input defaultValue="Doe" className={inputClass} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                <input type="email" defaultValue="john@example.com" className={inputClass} />
+              </div>
+              <button className="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-medium rounded-xl transition-all">Save Changes</button>
+            </div>
+          </div>
+
+          {/* Custom Domain */}
+          <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <GlowingIcon icon={Globe} color="bg-emerald-500" />
+                <div>
+                  <h3 className="font-semibold text-white">Custom Domain</h3>
+                  <p className="text-sm text-gray-400">Use your own domain for branded short links</p>
+                </div>
+              </div>
+              <span className="px-3 py-1 text-xs font-medium rounded-full bg-violet-500/20 text-violet-400">Pro Feature</span>
+            </div>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input placeholder="links.yourdomain.com" className={`flex-1 ${inputClass}`} />
+                <button className="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-medium rounded-xl transition-all">Add Domain</button>
+              </div>
+              <div className="p-4 rounded-xl bg-violet-500/10 border border-violet-500/20 text-sm">
+                <p className="font-medium text-white mb-1">How to set up your custom domain</p>
+                <p className="text-gray-400">Add a CNAME record pointing to <code className="bg-white/10 px-2 py-0.5 rounded text-violet-400">cname.linkforge.com</code></p>
+              </div>
+            </div>
+          </div>
+
+          {/* API Keys */}
+          <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <GlowingIcon icon={Key} color="bg-cyan-500" />
+              <div>
+                <h3 className="font-semibold text-white">API Keys</h3>
+                <p className="text-sm text-gray-400">Manage your API keys for integrations</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
+                <div>
+                  <p className="font-medium text-white">Production Key</p>
+                  <p className="text-sm text-gray-400">lf_live_••••••••••••1234</p>
+                </div>
+                <div className="flex gap-2">
+                  <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-gray-300 text-sm transition-colors">Copy</button>
+                  <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-gray-300 text-sm transition-colors">Regenerate</button>
+                </div>
+              </div>
+              <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-gray-300 text-sm transition-colors">Create New Key</button>
+            </div>
+          </div>
+
+          {/* Team Members */}
+          <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <GlowingIcon icon={Users} color="bg-amber-500" />
+                <div>
+                  <h3 className="font-semibold text-white">Team Members</h3>
+                  <p className="text-sm text-gray-400">Invite team members to collaborate</p>
+                </div>
+              </div>
+              <span className="px-3 py-1 text-xs font-medium rounded-full bg-white/10 text-gray-300">3/10 members</span>
+            </div>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input placeholder="colleague@company.com" type="email" className={`flex-1 ${inputClass}`} />
+                <button className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-medium rounded-xl transition-all">
+                  <UserPlus className="h-4 w-4" />
+                  Invite
+                </button>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { name: "John Doe", email: "john@example.com", role: "Owner", avatar: "JD" },
+                  { name: "Jane Smith", email: "jane@example.com", role: "Admin", avatar: "JS" },
+                  { name: "Bob Wilson", email: "bob@example.com", role: "Member", avatar: "BW" },
+                ].map((member, i) => (
+                  <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white text-sm font-semibold">{member.avatar}</div>
+                      <div>
+                        <p className="font-medium text-white">{member.name}</p>
+                        <p className="text-sm text-gray-400">{member.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${member.role === "Owner" ? "bg-amber-500/20 text-amber-400" : "bg-white/10 text-gray-400"}`}>{member.role}</span>
+                      {member.role !== "Owner" && (
+                        <button className="p-2 hover:bg-white/10 rounded-lg text-gray-400"><MoreHorizontal className="h-4 w-4" /></button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Danger Zone */}
+          <div className="bg-red-500/5 backdrop-blur-xl rounded-2xl border border-red-500/20 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <GlowingIcon icon={Trash2} color="bg-red-500" />
+              <div>
+                <h3 className="font-semibold text-white">Danger Zone</h3>
+                <p className="text-sm text-gray-400">Irreversible and destructive actions</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-4 rounded-xl bg-red-500/5 border border-red-500/10">
+              <div>
+                <p className="font-medium text-white">Delete Account</p>
+                <p className="text-sm text-gray-400">Permanently delete your account and all data</p>
+              </div>
+              <button className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-xl text-red-400 text-sm font-medium transition-colors">Delete Account</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

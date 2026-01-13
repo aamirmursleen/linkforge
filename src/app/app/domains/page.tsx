@@ -2,10 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { AppHeader } from "@/components/app/app-header";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Globe,
   Plus,
@@ -16,7 +12,26 @@ import {
   Star,
   AlertCircle,
   ExternalLink,
+  Shield,
+  Link2,
+  Zap,
 } from "lucide-react";
+
+// Glowing Icon Component
+function GlowingIcon({ icon: Icon, color, size = "md" }: { icon: any; color: string; size?: "sm" | "md" | "lg" }) {
+  const sizes = { sm: "h-4 w-4", md: "h-5 w-5", lg: "h-6 w-6" };
+  const containerSizes = { sm: "h-8 w-8", md: "h-10 w-10", lg: "h-12 w-12" };
+  const glowSizes = { sm: "h-6 w-6", md: "h-8 w-8", lg: "h-10 w-10" };
+
+  return (
+    <div className={`relative ${containerSizes[size]} flex items-center justify-center`}>
+      <div className={`absolute ${glowSizes[size]} rounded-full ${color} opacity-40 blur-lg`} />
+      <div className={`relative ${containerSizes[size]} rounded-xl ${color} bg-opacity-20 flex items-center justify-center backdrop-blur-sm border border-white/10`}>
+        <Icon className={`${sizes[size]} text-white`} />
+      </div>
+    </div>
+  );
+}
 
 interface Domain {
   id: string;
@@ -28,10 +43,7 @@ interface Domain {
   isDefault: boolean;
   linksCount: number;
   createdAt: string;
-  dnsInstructions: {
-    cname: { host: string; type: string; value: string };
-    txt: { host: string; type: string; value: string };
-  };
+  dnsInstructions: { cname: { host: string; type: string; value: string }; txt: { host: string; type: string; value: string } };
 }
 
 export default function DomainsPage() {
@@ -43,16 +55,13 @@ export default function DomainsPage() {
   const [verifying, setVerifying] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
-  // Demo workspace ID - in production, get from auth context
   const workspaceId = "demo-workspace";
 
   const fetchDomains = async () => {
     try {
       const res = await fetch(`/api/domains?workspaceId=${workspaceId}`);
       const data = await res.json();
-      if (data.success) {
-        setDomains(data.data);
-      }
+      if (data.success) setDomains(data.data);
     } catch (err) {
       console.error("Error fetching domains:", err);
     } finally {
@@ -60,79 +69,39 @@ export default function DomainsPage() {
     }
   };
 
-  useEffect(() => {
-    fetchDomains();
-  }, []);
+  useEffect(() => { fetchDomains(); }, []);
 
   const handleAddDomain = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setAdding(true);
-
     try {
       const res = await fetch("/api/domains", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domain: newDomain, workspaceId }),
       });
-
       const data = await res.json();
-
-      if (res.ok) {
-        setNewDomain("");
-        fetchDomains();
-      } else {
-        setError(data.error || "Failed to add domain");
-      }
-    } catch (err) {
-      setError("Something went wrong");
-    } finally {
-      setAdding(false);
-    }
+      if (res.ok) { setNewDomain(""); fetchDomains(); }
+      else setError(data.error || "Failed to add domain");
+    } catch { setError("Something went wrong"); }
+    finally { setAdding(false); }
   };
 
   const handleVerify = async (domainId: string) => {
     setVerifying(domainId);
-
     try {
-      const res = await fetch(`/api/domains/${domainId}/verify`, {
-        method: "POST",
-      });
-
+      const res = await fetch(`/api/domains/${domainId}/verify`, { method: "POST" });
       const data = await res.json();
-
-      if (data.success || data.data) {
-        fetchDomains();
-      }
-    } catch (err) {
-      console.error("Error verifying domain:", err);
-    } finally {
-      setVerifying(null);
-    }
+      if (data.success || data.data) fetchDomains();
+    } catch (err) { console.error("Error verifying domain:", err); }
+    finally { setVerifying(null); }
   };
 
   const handleDelete = async (domainId: string) => {
     if (!confirm("Are you sure you want to delete this domain?")) return;
-
-    try {
-      await fetch(`/api/domains/${domainId}?force=true`, { method: "DELETE" });
-      fetchDomains();
-    } catch (err) {
-      console.error("Error deleting domain:", err);
-    }
-  };
-
-  const handleSetDefault = async (domainId: string) => {
-    try {
-      await fetch(`/api/domains/${domainId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isDefault: true }),
-      });
-      fetchDomains();
-    } catch (err) {
-      console.error("Error setting default:", err);
-    }
+    try { await fetch(`/api/domains/${domainId}?force=true`, { method: "DELETE" }); fetchDomains(); }
+    catch (err) { console.error("Error deleting domain:", err); }
   };
 
   const copyToClipboard = (text: string, id: string) => {
@@ -141,229 +110,162 @@ export default function DomainsPage() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "verified":
-        return <Badge variant="success">Verified</Badge>;
-      case "verifying":
-        return <Badge variant="default">Verifying...</Badge>;
-      case "failed":
-        return <Badge variant="destructive">Failed</Badge>;
-      default:
-        return <Badge variant="outline">Pending</Badge>;
-    }
-  };
+  const inputClass = "w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50";
 
   return (
-    <>
-      <AppHeader title="Custom Domains" />
+    <div className="min-h-screen bg-[#0f0a1f]">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-600/20 rounded-full blur-3xl" />
+      </div>
 
-      <div className="p-4 lg:p-6 space-y-6 max-w-4xl">
-        {/* Add Domain */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-[var(--primary)]" />
-              <CardTitle>Add Custom Domain</CardTitle>
-            </div>
-            <CardDescription>
-              Use your own domain for branded short links
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleAddDomain} className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="links.yourdomain.com"
-                  value={newDomain}
-                  onChange={(e) => setNewDomain(e.target.value)}
-                  disabled={adding}
-                />
-                <Button type="submit" disabled={adding || !newDomain}>
-                  {adding ? (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plus className="h-4 w-4" />
-                  )}
-                  Add
-                </Button>
+      <div className="relative z-10">
+        <AppHeader title="Domains" />
+
+        <div className="p-4 lg:p-6 space-y-6">
+          {/* Stats Header */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4">
+              <div className="flex items-center gap-3">
+                <GlowingIcon icon={Globe} color="bg-violet-500" size="sm" />
+                <div>
+                  <div className="text-2xl font-bold text-white">{domains.length}</div>
+                  <div className="text-xs text-gray-400">Total Domains</div>
+                </div>
               </div>
-              {error && (
-                <p className="text-sm text-red-500 flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" />
-                  {error}
-                </p>
-              )}
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Domains List */}
-        {loading ? (
-          <div className="text-center py-12">
-            <RefreshCw className="h-8 w-8 animate-spin mx-auto text-gray-400" />
-            <p className="mt-2 text-gray-500">Loading domains...</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4">
+              <div className="flex items-center gap-3">
+                <GlowingIcon icon={Check} color="bg-emerald-500" size="sm" />
+                <div>
+                  <div className="text-2xl font-bold text-white">{domains.filter(d => d.status === "verified").length}</div>
+                  <div className="text-xs text-gray-400">Verified</div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4">
+              <div className="flex items-center gap-3">
+                <GlowingIcon icon={Shield} color="bg-cyan-500" size="sm" />
+                <div>
+                  <div className="text-2xl font-bold text-white">{domains.filter(d => d.sslStatus === "active").length}</div>
+                  <div className="text-xs text-gray-400">SSL Active</div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4">
+              <div className="flex items-center gap-3">
+                <GlowingIcon icon={Link2} color="bg-amber-500" size="sm" />
+                <div>
+                  <div className="text-2xl font-bold text-white">{domains.reduce((acc, d) => acc + d.linksCount, 0)}</div>
+                  <div className="text-xs text-gray-400">Links Using</div>
+                </div>
+              </div>
+            </div>
           </div>
-        ) : domains.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Globe className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No custom domains yet
-              </h3>
-              <p className="text-gray-500 mb-4">
-                Add your first custom domain to create branded short links
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
+
+          {/* Add Domain */}
+          <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+            <h3 className="font-semibold text-white mb-4">Add Custom Domain</h3>
+            <form onSubmit={handleAddDomain} className="flex gap-3">
+              <input
+                type="text"
+                placeholder="links.yourdomain.com"
+                value={newDomain}
+                onChange={(e) => setNewDomain(e.target.value)}
+                className={`flex-1 ${inputClass}`}
+              />
+              <button
+                type="submit"
+                disabled={adding || !newDomain}
+                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 disabled:opacity-50 text-white font-medium rounded-xl transition-all"
+              >
+                <Plus className="h-4 w-4" />
+                {adding ? "Adding..." : "Add Domain"}
+              </button>
+            </form>
+            {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+          </div>
+
+          {/* Domains List */}
           <div className="space-y-4">
-            {domains.map((domain) => (
-              <Card key={domain.id}>
-                <CardContent className="py-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-lg">{domain.domain}</h3>
-                        {getStatusBadge(domain.status)}
-                        {domain.isDefault && (
-                          <Badge variant="outline" className="gap-1">
-                            <Star className="h-3 w-3" />
-                            Default
-                          </Badge>
-                        )}
-                      </div>
-
-                      <p className="text-sm text-gray-500">
-                        {domain.linksCount} links • Added{" "}
-                        {new Date(domain.createdAt).toLocaleDateString()}
-                      </p>
-
-                      {/* DNS Instructions for pending domains */}
-                      {domain.status !== "verified" && (
-                        <div className="mt-4 p-4 bg-amber-50 rounded-lg">
-                          <h4 className="font-medium text-amber-800 mb-2">
-                            Configure DNS to verify ownership
-                          </h4>
-                          <div className="space-y-3 text-sm">
-                            <div>
-                              <p className="font-medium text-gray-700">
-                                Option 1: CNAME Record
-                              </p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <code className="bg-white px-2 py-1 rounded text-xs flex-1">
-                                  {domain.dnsInstructions.cname.host} → {domain.dnsInstructions.cname.value}
-                                </code>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    copyToClipboard(
-                                      domain.dnsInstructions.cname.value,
-                                      `cname-${domain.id}`
-                                    )
-                                  }
-                                >
-                                  {copied === `cname-${domain.id}` ? (
-                                    <Check className="h-4 w-4" />
-                                  ) : (
-                                    <Copy className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </div>
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-700">
-                                Option 2: TXT Record
-                              </p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <code className="bg-white px-2 py-1 rounded text-xs flex-1 truncate">
-                                  {domain.dnsInstructions.txt.host} → {domain.dnsInstructions.txt.value}
-                                </code>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    copyToClipboard(
-                                      domain.dnsInstructions.txt.value,
-                                      `txt-${domain.id}`
-                                    )
-                                  }
-                                >
-                                  {copied === `txt-${domain.id}` ? (
-                                    <Check className="h-4 w-4" />
-                                  ) : (
-                                    <Copy className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
+            {loading ? (
+              <div className="text-center py-12 text-gray-400">Loading domains...</div>
+            ) : domains.length > 0 ? (
+              domains.map((domain) => (
+                <div key={domain.id} className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <GlowingIcon icon={Globe} color={domain.status === "verified" ? "bg-emerald-500" : "bg-amber-500"} size="md" />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-white">{domain.domain}</h3>
+                          {domain.isDefault && <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-violet-500/20 text-violet-400">Default</span>}
                         </div>
-                      )}
+                        <div className="flex items-center gap-4 text-sm text-gray-400 mt-1">
+                          <span>{domain.linksCount} links</span>
+                          <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                            domain.status === "verified" ? "bg-emerald-500/20 text-emerald-400" :
+                            domain.status === "pending" ? "bg-amber-500/20 text-amber-400" : "bg-red-500/20 text-red-400"
+                          }`}>{domain.status}</span>
+                        </div>
+                      </div>
                     </div>
-
-                    {/* Actions */}
                     <div className="flex items-center gap-2">
                       {domain.status !== "verified" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <button
                           onClick={() => handleVerify(domain.id)}
                           disabled={verifying === domain.id}
+                          className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-gray-300 text-sm transition-colors"
                         >
-                          {verifying === domain.id ? (
-                            <RefreshCw className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <RefreshCw className="h-4 w-4" />
-                          )}
+                          <RefreshCw className={`h-4 w-4 ${verifying === domain.id ? "animate-spin" : ""}`} />
                           Verify
-                        </Button>
+                        </button>
                       )}
-                      {domain.status === "verified" && !domain.isDefault && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSetDefault(domain.id)}
-                        >
-                          <Star className="h-4 w-4" />
-                          Set Default
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                      <button
                         onClick={() => handleDelete(domain.id)}
+                        className="p-2 hover:bg-white/10 rounded-xl text-red-400 transition-colors"
                       >
                         <Trash2 className="h-4 w-4" />
-                      </Button>
+                      </button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
 
-        {/* Info Card */}
-        <Card className="bg-blue-50 border-blue-100">
-          <CardContent className="py-4">
-            <div className="flex gap-3">
-              <ExternalLink className="h-5 w-5 text-blue-600 mt-0.5" />
-              <div className="text-sm text-blue-800">
-                <p className="font-medium mb-1">How custom domains work</p>
-                <ul className="list-disc list-inside space-y-1 text-blue-700">
-                  <li>Add your domain (e.g., go.yourbrand.com)</li>
-                  <li>Configure DNS records with your domain provider</li>
-                  <li>Click &quot;Verify&quot; once DNS propagates (can take up to 48 hours)</li>
-                  <li>Start creating branded short links!</li>
-                </ul>
+                  {domain.status !== "verified" && domain.dnsInstructions && (
+                    <div className="p-4 bg-white/5 rounded-xl">
+                      <p className="text-sm font-medium text-gray-300 mb-3">DNS Configuration Required</p>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                          <div>
+                            <span className="text-xs text-gray-500">CNAME Record</span>
+                            <p className="text-sm text-gray-300">{domain.dnsInstructions.cname.host} → {domain.dnsInstructions.cname.value}</p>
+                          </div>
+                          <button
+                            onClick={() => copyToClipboard(domain.dnsInstructions.cname.value, `cname-${domain.id}`)}
+                            className="p-2 hover:bg-white/10 rounded-lg text-gray-400"
+                          >
+                            {copied === `cname-${domain.id}` ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="bg-white/5 backdrop-blur-xl rounded-2xl border-2 border-dashed border-white/10 p-12 text-center">
+                <div className="relative h-16 w-16 mx-auto mb-4">
+                  <div className="absolute inset-0 bg-violet-500 rounded-full opacity-20 blur-xl" />
+                  <div className="relative h-16 w-16 rounded-2xl bg-violet-500/20 flex items-center justify-center border border-white/10">
+                    <Globe className="h-8 w-8 text-violet-400" />
+                  </div>
+                </div>
+                <h3 className="font-semibold text-white text-lg mb-2">No Custom Domains</h3>
+                <p className="text-gray-400 mb-6">Add your first custom domain for branded short links</p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            )}
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

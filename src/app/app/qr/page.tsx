@@ -4,8 +4,6 @@ import { useState, useRef, useCallback } from "react";
 import { AppHeader } from "@/components/app/app-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,52 +37,46 @@ import {
   Edit,
   Eye,
   X,
+  Sparkles,
+  Scan,
 } from "lucide-react";
 import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
 import { cn } from "@/lib/utils";
 
+// Glowing Icon Component
+function GlowingIcon({ icon: Icon, color, size = "md" }: { icon: any; color: string; size?: "sm" | "md" | "lg" }) {
+  const sizes = { sm: "h-4 w-4", md: "h-5 w-5", lg: "h-6 w-6" };
+  const containerSizes = { sm: "h-8 w-8", md: "h-10 w-10", lg: "h-12 w-12" };
+  const glowSizes = { sm: "h-6 w-6", md: "h-8 w-8", lg: "h-10 w-10" };
+
+  return (
+    <div className={`relative ${containerSizes[size]} flex items-center justify-center`}>
+      <div className={`absolute ${glowSizes[size]} rounded-full ${color} opacity-40 blur-lg`} />
+      <div className={`relative ${containerSizes[size]} rounded-xl ${color} bg-opacity-20 flex items-center justify-center backdrop-blur-sm border border-white/10`}>
+        <Icon className={`${sizes[size]} text-white`} />
+      </div>
+    </div>
+  );
+}
+
 // QR Types Configuration
 const QR_TYPES = [
-  { type: "url", label: "URL", icon: Link2, description: "Link to any website" },
-  { type: "vcard", label: "Contact", icon: User, description: "Share contact info" },
-  { type: "wifi", label: "WiFi", icon: Wifi, description: "Share WiFi credentials" },
-  { type: "sms", label: "SMS", icon: MessageSquare, description: "Pre-filled message" },
-  { type: "email", label: "Email", icon: Mail, description: "Pre-filled email" },
-  { type: "text", label: "Text", icon: Type, description: "Plain text content" },
+  { type: "url", label: "URL", icon: Link2, description: "Link to any website", color: "bg-violet-500" },
+  { type: "vcard", label: "Contact", icon: User, description: "Share contact info", color: "bg-emerald-500" },
+  { type: "wifi", label: "WiFi", icon: Wifi, description: "Share WiFi credentials", color: "bg-cyan-500" },
+  { type: "sms", label: "SMS", icon: MessageSquare, description: "Pre-filled message", color: "bg-amber-500" },
+  { type: "email", label: "Email", icon: Mail, description: "Pre-filled email", color: "bg-rose-500" },
+  { type: "text", label: "Text", icon: Type, description: "Plain text content", color: "bg-blue-500" },
 ];
 
 // Style Templates
 const STYLE_TEMPLATES = [
-  {
-    id: "classic",
-    name: "Classic",
-    config: { fgColor: "#000000", bgColor: "#FFFFFF", level: "M" as const },
-  },
-  {
-    id: "rounded",
-    name: "Rounded",
-    config: { fgColor: "#1a1a1a", bgColor: "#FFFFFF", level: "H" as const },
-  },
-  {
-    id: "blue",
-    name: "Ocean Blue",
-    config: { fgColor: "#2563eb", bgColor: "#FFFFFF", level: "M" as const },
-  },
-  {
-    id: "purple",
-    name: "Royal Purple",
-    config: { fgColor: "#7c3aed", bgColor: "#FFFFFF", level: "M" as const },
-  },
-  {
-    id: "gradient",
-    name: "Sunset",
-    config: { fgColor: "#ec4899", bgColor: "#fdf2f8", level: "M" as const },
-  },
-  {
-    id: "dark",
-    name: "Dark Mode",
-    config: { fgColor: "#FFFFFF", bgColor: "#1f2937", level: "M" as const },
-  },
+  { id: "classic", name: "Classic", config: { fgColor: "#000000", bgColor: "#FFFFFF", level: "M" as const } },
+  { id: "rounded", name: "Rounded", config: { fgColor: "#1a1a1a", bgColor: "#FFFFFF", level: "H" as const } },
+  { id: "blue", name: "Ocean Blue", config: { fgColor: "#2563eb", bgColor: "#FFFFFF", level: "M" as const } },
+  { id: "purple", name: "Royal Purple", config: { fgColor: "#7c3aed", bgColor: "#FFFFFF", level: "M" as const } },
+  { id: "gradient", name: "Sunset", config: { fgColor: "#ec4899", bgColor: "#fdf2f8", level: "M" as const } },
+  { id: "dark", name: "Dark Mode", config: { fgColor: "#FFFFFF", bgColor: "#1f2937", level: "M" as const } },
 ];
 
 // Frame Styles
@@ -95,7 +87,6 @@ const FRAME_STYLES = [
   { id: "rounded", name: "Rounded Border" },
 ];
 
-// Start with empty QR codes list for new users
 interface QRCodeItem {
   id: string;
   name: string;
@@ -108,9 +99,7 @@ interface QRCodeItem {
 
 interface QRFormData {
   type: string;
-  // URL
   url: string;
-  // vCard
   firstName: string;
   lastName: string;
   organization: string;
@@ -118,32 +107,24 @@ interface QRFormData {
   email: string;
   phone: string;
   website: string;
-  // WiFi
   ssid: string;
   password: string;
   encryption: string;
-  // SMS
   smsPhone: string;
   smsMessage: string;
-  // Email
   emailTo: string;
   emailSubject: string;
   emailBody: string;
-  // Text
   text: string;
-  // Style
   fgColor: string;
   bgColor: string;
   size: number;
   level: "L" | "M" | "Q" | "H";
-  // Logo
   logo: string;
   logoSize: number;
-  // Frame
   frameStyle: string;
   frameText: string;
   frameColor: string;
-  // Meta
   name: string;
 }
 
@@ -187,7 +168,6 @@ export default function QRCodesPage() {
   const [copied, setCopied] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
 
-  // Generate QR content based on type
   const generateContent = useCallback((): string => {
     switch (formData.type) {
       case "url":
@@ -204,9 +184,7 @@ export default function QRCodesPage() {
           formData.phone && `TEL:${formData.phone}`,
           formData.website && `URL:${formData.website}`,
           "END:VCARD",
-        ]
-          .filter(Boolean)
-          .join("\n");
+        ].filter(Boolean).join("\n");
       case "wifi":
         return `WIFI:T:${formData.encryption};S:${formData.ssid};P:${formData.password};;`;
       case "sms":
@@ -225,7 +203,6 @@ export default function QRCodesPage() {
     }
   }, [formData]);
 
-  // Apply template
   const applyTemplate = (template: (typeof STYLE_TEMPLATES)[0]) => {
     setFormData((prev) => ({
       ...prev,
@@ -235,7 +212,6 @@ export default function QRCodesPage() {
     }));
   };
 
-  // Download QR code
   const downloadQR = (format: "png" | "svg") => {
     const canvas = qrRef.current?.querySelector("canvas");
     const svg = qrRef.current?.querySelector("svg");
@@ -258,7 +234,6 @@ export default function QRCodesPage() {
     }
   };
 
-  // Copy QR to clipboard
   const copyToClipboard = async () => {
     const canvas = qrRef.current?.querySelector("canvas");
     if (canvas) {
@@ -275,7 +250,6 @@ export default function QRCodesPage() {
     }
   };
 
-  // Save QR code
   const handleSave = () => {
     const newQR = {
       id: Date.now().toString(),
@@ -291,658 +265,651 @@ export default function QRCodesPage() {
     setFormData(defaultFormData);
   };
 
-  // Filter QR codes
   const filteredQRCodes = qrCodes.filter(
     (qr) =>
       qr.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       qr.type.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Content form based on type
+  const totalScans = qrCodes.reduce((acc, qr) => acc + qr.scanCount, 0);
+
   const renderContentForm = () => {
+    const inputClass = "w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50";
+    const labelClass = "text-sm font-medium text-gray-300";
+
     switch (formData.type) {
       case "url":
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="url">Website URL</Label>
-              <Input
-                id="url"
+              <label className={labelClass}>Website URL</label>
+              <input
                 type="url"
                 placeholder="https://example.com"
                 value={formData.url}
                 onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                className="mt-1.5"
+                className={`${inputClass} mt-1.5`}
               />
             </div>
           </div>
         );
-
       case "vcard":
         return (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="firstName">First Name *</Label>
-                <Input
-                  id="firstName"
+                <label className={labelClass}>First Name *</label>
+                <input
                   placeholder="John"
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  className="mt-1.5"
+                  className={`${inputClass} mt-1.5`}
                 />
               </div>
               <div>
-                <Label htmlFor="lastName">Last Name *</Label>
-                <Input
-                  id="lastName"
+                <label className={labelClass}>Last Name *</label>
+                <input
                   placeholder="Doe"
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  className="mt-1.5"
+                  className={`${inputClass} mt-1.5`}
                 />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="organization">Organization</Label>
-                <Input
-                  id="organization"
+                <label className={labelClass}>Organization</label>
+                <input
                   placeholder="Company Inc."
                   value={formData.organization}
                   onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
-                  className="mt-1.5"
+                  className={`${inputClass} mt-1.5`}
                 />
               </div>
               <div>
-                <Label htmlFor="title">Job Title</Label>
-                <Input
-                  id="title"
+                <label className={labelClass}>Job Title</label>
+                <input
                   placeholder="Software Engineer"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="mt-1.5"
+                  className={`${inputClass} mt-1.5`}
                 />
               </div>
             </div>
             <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
+              <label className={labelClass}>Email</label>
+              <input
                 type="email"
                 placeholder="john@example.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="mt-1.5"
+                className={`${inputClass} mt-1.5`}
               />
             </div>
             <div>
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
+              <label className={labelClass}>Phone</label>
+              <input
                 type="tel"
                 placeholder="+1 234 567 8900"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="mt-1.5"
+                className={`${inputClass} mt-1.5`}
               />
             </div>
             <div>
-              <Label htmlFor="website">Website</Label>
-              <Input
-                id="website"
+              <label className={labelClass}>Website</label>
+              <input
                 type="url"
                 placeholder="https://yourwebsite.com"
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                className="mt-1.5"
+                className={`${inputClass} mt-1.5`}
               />
             </div>
           </div>
         );
-
       case "wifi":
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="ssid">Network Name (SSID) *</Label>
-              <Input
-                id="ssid"
+              <label className={labelClass}>Network Name (SSID) *</label>
+              <input
                 placeholder="MyWiFiNetwork"
                 value={formData.ssid}
                 onChange={(e) => setFormData({ ...formData, ssid: e.target.value })}
-                className="mt-1.5"
+                className={`${inputClass} mt-1.5`}
               />
             </div>
             <div>
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
+              <label className={labelClass}>Password</label>
+              <input
                 type="password"
-                placeholder="••••••••"
+                placeholder="Enter password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="mt-1.5"
+                className={`${inputClass} mt-1.5`}
               />
             </div>
             <div>
-              <Label htmlFor="encryption">Security Type</Label>
-              <Select
-                id="encryption"
+              <label className={labelClass}>Security Type</label>
+              <select
                 value={formData.encryption}
                 onChange={(e) => setFormData({ ...formData, encryption: e.target.value })}
-                className="mt-1.5"
+                className={`${inputClass} mt-1.5`}
               >
                 <option value="WPA">WPA/WPA2</option>
                 <option value="WEP">WEP</option>
                 <option value="nopass">None (Open Network)</option>
-              </Select>
+              </select>
             </div>
           </div>
         );
-
       case "sms":
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="smsPhone">Phone Number *</Label>
-              <Input
-                id="smsPhone"
+              <label className={labelClass}>Phone Number *</label>
+              <input
                 type="tel"
                 placeholder="+1 234 567 8900"
                 value={formData.smsPhone}
                 onChange={(e) => setFormData({ ...formData, smsPhone: e.target.value })}
-                className="mt-1.5"
+                className={`${inputClass} mt-1.5`}
               />
             </div>
             <div>
-              <Label htmlFor="smsMessage">Message (optional)</Label>
+              <label className={labelClass}>Pre-filled Message (optional)</label>
               <textarea
-                id="smsMessage"
-                placeholder="Your pre-filled message..."
+                placeholder="Your message here..."
                 value={formData.smsMessage}
                 onChange={(e) => setFormData({ ...formData, smsMessage: e.target.value })}
-                className="mt-1.5 w-full h-24 rounded-lg border border-[var(--border)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                className={`${inputClass} mt-1.5 h-24`}
               />
             </div>
           </div>
         );
-
       case "email":
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="emailTo">Email Address *</Label>
-              <Input
-                id="emailTo"
+              <label className={labelClass}>Email Address *</label>
+              <input
                 type="email"
                 placeholder="recipient@example.com"
                 value={formData.emailTo}
                 onChange={(e) => setFormData({ ...formData, emailTo: e.target.value })}
-                className="mt-1.5"
+                className={`${inputClass} mt-1.5`}
               />
             </div>
             <div>
-              <Label htmlFor="emailSubject">Subject (optional)</Label>
-              <Input
-                id="emailSubject"
-                placeholder="Email subject..."
+              <label className={labelClass}>Subject</label>
+              <input
+                placeholder="Email subject"
                 value={formData.emailSubject}
                 onChange={(e) => setFormData({ ...formData, emailSubject: e.target.value })}
-                className="mt-1.5"
+                className={`${inputClass} mt-1.5`}
               />
             </div>
             <div>
-              <Label htmlFor="emailBody">Body (optional)</Label>
+              <label className={labelClass}>Body</label>
               <textarea
-                id="emailBody"
-                placeholder="Email body content..."
+                placeholder="Email body..."
                 value={formData.emailBody}
                 onChange={(e) => setFormData({ ...formData, emailBody: e.target.value })}
-                className="mt-1.5 w-full h-24 rounded-lg border border-[var(--border)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                className={`${inputClass} mt-1.5 h-24`}
               />
             </div>
           </div>
         );
-
       case "text":
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="text">Text Content</Label>
+              <label className={labelClass}>Text Content</label>
               <textarea
-                id="text"
                 placeholder="Enter any text content..."
                 value={formData.text}
                 onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-                className="mt-1.5 w-full h-32 rounded-lg border border-[var(--border)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                className={`${inputClass} mt-1.5 h-32`}
               />
             </div>
           </div>
         );
-
       default:
         return null;
     }
   };
 
   return (
-    <>
-      <AppHeader title="QR Codes" />
-
-      <div className="p-4 lg:p-6 space-y-6">
-        {/* Actions Bar */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted)]" />
-            <Input
-              placeholder="Search QR codes..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <Plus className="h-4 w-4" />
-            Create QR Code
-          </Button>
-        </div>
-
-        {/* QR Codes Grid */}
-        {filteredQRCodes.length > 0 ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredQRCodes.map((qr) => (
-              <Card key={qr.id} className="hover:shadow-lg transition-shadow group">
-                <CardContent className="pt-6">
-                  {/* QR Code Preview */}
-                  <div
-                    className="rounded-lg p-4 mb-4 flex items-center justify-center"
-                    style={{ backgroundColor: qr.style.bgColor }}
-                  >
-                    <QRCodeSVG
-                      value={qr.content}
-                      size={128}
-                      fgColor={qr.style.fgColor}
-                      bgColor={qr.style.bgColor}
-                      level="M"
-                    />
-                  </div>
-
-                  {/* Info */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-[var(--dark)] truncate">{qr.name}</h3>
-                      <Badge variant="outline" className="uppercase text-xs">
-                        {qr.type}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between text-sm text-[var(--muted)]">
-                      <span>{qr.scanCount} scans</span>
-                      <span>{qr.createdAt}</span>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[var(--border)]">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Download className="h-4 w-4" />
-                      Download
-                    </Button>
-                    <Button variant="ghost" size="icon">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon">
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="border-dashed border-2">
-            <CardContent className="py-16 text-center">
-              <QrCode className="h-16 w-16 mx-auto text-[var(--muted)] mb-4" />
-              <h3 className="text-lg font-semibold text-[var(--dark)] mb-2">No QR Codes Yet</h3>
-              <p className="text-[var(--muted)] mb-6">
-                Create your first QR code to get started
-              </p>
-              <Button onClick={() => setShowCreateDialog(true)}>
-                <Plus className="h-4 w-4" />
-                Create QR Code
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+    <div className="min-h-screen bg-[#0f0a1f]">
+      {/* Background Effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-600/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-fuchsia-600/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl" />
       </div>
 
-      {/* Create QR Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create QR Code</DialogTitle>
-            <DialogDescription>
-              Generate a customized QR code for any purpose
-            </DialogDescription>
-          </DialogHeader>
+      <div className="relative z-10">
+        <AppHeader title="QR Codes" />
 
-          <div className="grid lg:grid-cols-2 gap-6 mt-4">
-            {/* Left: Form */}
-            <div className="space-y-6">
-              {/* QR Name */}
-              <div>
-                <Label htmlFor="qrName">QR Code Name</Label>
-                <Input
-                  id="qrName"
-                  placeholder="My QR Code"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-1.5"
-                />
-              </div>
-
-              {/* QR Type Selector */}
-              <div>
-                <Label>QR Code Type</Label>
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  {QR_TYPES.map((qrType) => (
-                    <button
-                      key={qrType.type}
-                      onClick={() => setFormData({ ...formData, type: qrType.type })}
-                      className={cn(
-                        "flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all",
-                        formData.type === qrType.type
-                          ? "border-[var(--primary)] bg-[var(--primary)]/5"
-                          : "border-[var(--border)] hover:border-[var(--primary)]/50"
-                      )}
-                    >
-                      <qrType.icon className="h-5 w-5" />
-                      <span className="text-xs font-medium">{qrType.label}</span>
-                    </button>
-                  ))}
+        <div className="p-4 lg:p-6 space-y-6">
+          {/* Stats Header */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4">
+              <div className="flex items-center gap-3">
+                <GlowingIcon icon={QrCode} color="bg-violet-500" size="sm" />
+                <div>
+                  <div className="text-2xl font-bold text-white">{qrCodes.length}</div>
+                  <div className="text-xs text-gray-400">Total QR Codes</div>
                 </div>
               </div>
-
-              {/* Tabs for Content/Style/Frame */}
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="content" className="flex-1">
-                    <Type className="h-4 w-4 mr-1.5" />
-                    Content
-                  </TabsTrigger>
-                  <TabsTrigger value="style" className="flex-1">
-                    <Palette className="h-4 w-4 mr-1.5" />
-                    Style
-                  </TabsTrigger>
-                  <TabsTrigger value="frame" className="flex-1">
-                    <Frame className="h-4 w-4 mr-1.5" />
-                    Frame
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="content" className="mt-4">
-                  {renderContentForm()}
-                </TabsContent>
-
-                <TabsContent value="style" className="mt-4 space-y-6">
-                  {/* Templates */}
-                  <div>
-                    <Label>Quick Templates</Label>
-                    <div className="grid grid-cols-3 gap-2 mt-2">
-                      {STYLE_TEMPLATES.map((template) => (
-                        <button
-                          key={template.id}
-                          onClick={() => applyTemplate(template)}
-                          className="p-3 rounded-lg border border-[var(--border)] hover:border-[var(--primary)] transition-all"
-                          style={{ backgroundColor: template.config.bgColor }}
-                        >
-                          <div
-                            className="w-full h-8 rounded"
-                            style={{ backgroundColor: template.config.fgColor }}
-                          />
-                          <span className="text-xs font-medium mt-1 block">{template.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Custom Colors */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="fgColor">Foreground Color</Label>
-                      <div className="flex gap-2 mt-1.5">
-                        <input
-                          type="color"
-                          id="fgColor"
-                          value={formData.fgColor}
-                          onChange={(e) => setFormData({ ...formData, fgColor: e.target.value })}
-                          className="w-12 h-10 rounded cursor-pointer border border-[var(--border)]"
-                        />
-                        <Input
-                          value={formData.fgColor}
-                          onChange={(e) => setFormData({ ...formData, fgColor: e.target.value })}
-                          className="flex-1 font-mono"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="bgColor">Background Color</Label>
-                      <div className="flex gap-2 mt-1.5">
-                        <input
-                          type="color"
-                          id="bgColor"
-                          value={formData.bgColor}
-                          onChange={(e) => setFormData({ ...formData, bgColor: e.target.value })}
-                          className="w-12 h-10 rounded cursor-pointer border border-[var(--border)]"
-                        />
-                        <Input
-                          value={formData.bgColor}
-                          onChange={(e) => setFormData({ ...formData, bgColor: e.target.value })}
-                          className="flex-1 font-mono"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Error Correction */}
-                  <div>
-                    <Label htmlFor="errorLevel">Error Correction Level</Label>
-                    <Select
-                      id="errorLevel"
-                      value={formData.level}
-                      onChange={(e) =>
-                        setFormData({ ...formData, level: e.target.value as "L" | "M" | "Q" | "H" })
-                      }
-                      className="mt-1.5"
-                    >
-                      <option value="L">Low (7%)</option>
-                      <option value="M">Medium (15%)</option>
-                      <option value="Q">Quartile (25%)</option>
-                      <option value="H">High (30%)</option>
-                    </Select>
-                    <p className="text-xs text-[var(--muted)] mt-1">
-                      Higher correction allows more of the QR code to be damaged/covered
-                    </p>
-                  </div>
-
-                  {/* Size */}
-                  <div>
-                    <Label htmlFor="size">Size (pixels)</Label>
-                    <Input
-                      id="size"
-                      type="number"
-                      min="128"
-                      max="1024"
-                      step="32"
-                      value={formData.size}
-                      onChange={(e) =>
-                        setFormData({ ...formData, size: parseInt(e.target.value) || 256 })
-                      }
-                      className="mt-1.5"
-                    />
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="frame" className="mt-4 space-y-6">
-                  {/* Frame Style */}
-                  <div>
-                    <Label>Frame Style</Label>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      {FRAME_STYLES.map((frame) => (
-                        <button
-                          key={frame.id}
-                          onClick={() => setFormData({ ...formData, frameStyle: frame.id })}
-                          className={cn(
-                            "p-3 rounded-lg border-2 text-sm font-medium transition-all",
-                            formData.frameStyle === frame.id
-                              ? "border-[var(--primary)] bg-[var(--primary)]/5"
-                              : "border-[var(--border)] hover:border-[var(--primary)]/50"
-                          )}
-                        >
-                          {frame.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {formData.frameStyle !== "none" && (
-                    <>
-                      {/* Frame Text */}
-                      <div>
-                        <Label htmlFor="frameText">Frame Text</Label>
-                        <Input
-                          id="frameText"
-                          placeholder="Scan Me"
-                          value={formData.frameText}
-                          onChange={(e) => setFormData({ ...formData, frameText: e.target.value })}
-                          className="mt-1.5"
-                        />
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {["Scan Me", "Scan to Connect", "Scan for Menu", "Scan to Pay"].map(
-                            (preset) => (
-                              <button
-                                key={preset}
-                                onClick={() => setFormData({ ...formData, frameText: preset })}
-                                className="px-2 py-1 text-xs rounded border border-[var(--border)] hover:border-[var(--primary)] transition-colors"
-                              >
-                                {preset}
-                              </button>
-                            )
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Frame Color */}
-                      <div>
-                        <Label htmlFor="frameColor">Frame Color</Label>
-                        <div className="flex gap-2 mt-1.5">
-                          <input
-                            type="color"
-                            id="frameColor"
-                            value={formData.frameColor}
-                            onChange={(e) =>
-                              setFormData({ ...formData, frameColor: e.target.value })
-                            }
-                            className="w-12 h-10 rounded cursor-pointer border border-[var(--border)]"
-                          />
-                          <Input
-                            value={formData.frameColor}
-                            onChange={(e) =>
-                              setFormData({ ...formData, frameColor: e.target.value })
-                            }
-                            className="flex-1 font-mono"
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </TabsContent>
-              </Tabs>
             </div>
-
-            {/* Right: Preview */}
-            <div className="lg:border-l lg:pl-6 border-[var(--border)]">
-              <Label className="mb-4 block">Live Preview</Label>
-              <div
-                ref={qrRef}
-                className="rounded-xl p-8 flex flex-col items-center justify-center"
-                style={{ backgroundColor: formData.bgColor }}
-              >
-                {/* Frame Top Text */}
-                {formData.frameStyle === "top" && (
-                  <div
-                    className="mb-3 px-4 py-1 rounded-full text-sm font-medium"
-                    style={{ backgroundColor: formData.frameColor, color: formData.bgColor }}
-                  >
-                    {formData.frameText}
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4">
+              <div className="flex items-center gap-3">
+                <GlowingIcon icon={Scan} color="bg-emerald-500" size="sm" />
+                <div>
+                  <div className="text-2xl font-bold text-white">{totalScans.toLocaleString()}</div>
+                  <div className="text-xs text-gray-400">Total Scans</div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4">
+              <div className="flex items-center gap-3">
+                <GlowingIcon icon={Link2} color="bg-cyan-500" size="sm" />
+                <div>
+                  <div className="text-2xl font-bold text-white">
+                    {qrCodes.filter(qr => qr.type === "url").length}
                   </div>
-                )}
+                  <div className="text-xs text-gray-400">URL Codes</div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-4">
+              <div className="flex items-center gap-3">
+                <GlowingIcon icon={User} color="bg-amber-500" size="sm" />
+                <div>
+                  <div className="text-2xl font-bold text-white">
+                    {qrCodes.filter(qr => qr.type === "vcard").length}
+                  </div>
+                  <div className="text-xs text-gray-400">Contact Cards</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-                {/* QR Code */}
-                <div
-                  className={cn(
-                    "p-4",
-                    formData.frameStyle === "rounded" && "border-4 rounded-2xl",
-                  )}
-                  style={{
-                    borderColor: formData.frameStyle === "rounded" ? formData.frameColor : undefined,
-                  }}
-                >
-                  <QRCodeCanvas
-                    value={generateContent()}
-                    size={formData.size > 300 ? 256 : formData.size}
-                    fgColor={formData.fgColor}
-                    bgColor={formData.bgColor}
-                    level={formData.level}
-                    imageSettings={
-                      formData.logo
-                        ? {
-                            src: formData.logo,
-                            height: formData.logoSize,
-                            width: formData.logoSize,
-                            excavate: true,
-                          }
-                        : undefined
-                    }
+          {/* Actions Bar */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                placeholder="Search QR codes..."
+                className="w-full pl-10 pr-4 py-2.5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 transition-all"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <button
+              onClick={() => setShowCreateDialog(true)}
+              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-medium rounded-xl transition-all hover:shadow-lg hover:shadow-violet-500/25"
+            >
+              <Plus className="h-4 w-4" />
+              Create QR Code
+            </button>
+          </div>
+
+          {/* QR Codes Grid */}
+          {filteredQRCodes.length > 0 ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredQRCodes.map((qr, index) => {
+                const typeConfig = QR_TYPES.find(t => t.type === qr.type);
+                const colors = ["bg-violet-500", "bg-emerald-500", "bg-cyan-500", "bg-amber-500", "bg-rose-500", "bg-blue-500"];
+                const iconColor = typeConfig?.color || colors[index % colors.length];
+
+                return (
+                  <div
+                    key={qr.id}
+                    className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 hover:border-white/20 transition-all group hover:shadow-lg hover:shadow-violet-500/10 overflow-hidden"
+                  >
+                    {/* QR Code Preview */}
+                    <div
+                      className="p-6 flex items-center justify-center"
+                      style={{ backgroundColor: qr.style.bgColor }}
+                    >
+                      <QRCodeSVG
+                        value={qr.content}
+                        size={128}
+                        fgColor={qr.style.fgColor}
+                        bgColor={qr.style.bgColor}
+                        level="M"
+                      />
+                    </div>
+
+                    <div className="p-4 space-y-3">
+                      {/* Info */}
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-white truncate">{qr.name}</h3>
+                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${iconColor} bg-opacity-20 text-white uppercase`}>
+                          {qr.type}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm text-gray-400">
+                        <span>{qr.scanCount} scans</span>
+                        <span>{qr.createdAt}</span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 pt-3 border-t border-white/10">
+                        <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-300 text-sm transition-colors">
+                          <Download className="h-4 w-4" />
+                          Download
+                        </button>
+                        <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        </button>
+                        <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                          <Trash2 className="h-4 w-4 text-red-400" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border-2 border-dashed border-white/10 p-12 text-center">
+              <div className="relative h-16 w-16 mx-auto mb-4">
+                <div className="absolute inset-0 bg-violet-500 rounded-full opacity-20 blur-xl" />
+                <div className="relative h-16 w-16 rounded-2xl bg-violet-500/20 flex items-center justify-center border border-white/10">
+                  <QrCode className="h-8 w-8 text-violet-400" />
+                </div>
+              </div>
+              <h3 className="font-semibold text-white text-lg mb-2">No QR Codes Yet</h3>
+              <p className="text-gray-400 mb-6">Create your first QR code to get started</p>
+              <button
+                onClick={() => setShowCreateDialog(true)}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-medium rounded-xl transition-all"
+              >
+                <Plus className="h-4 w-4" />
+                Create QR Code
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Create QR Dialog */}
+        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-[#1a1425] border-white/10">
+            <DialogHeader>
+              <DialogTitle className="text-white">Create QR Code</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Generate a customized QR code for any purpose
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid lg:grid-cols-2 gap-6 mt-4">
+              {/* Left: Form */}
+              <div className="space-y-6">
+                {/* QR Name */}
+                <div>
+                  <label className="text-sm font-medium text-gray-300">QR Code Name</label>
+                  <input
+                    placeholder="My QR Code"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full mt-1.5 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                   />
                 </div>
 
-                {/* Frame Bottom Text */}
-                {formData.frameStyle === "bottom" && (
-                  <div
-                    className="mt-3 px-4 py-1 rounded-full text-sm font-medium"
-                    style={{ backgroundColor: formData.frameColor, color: formData.bgColor }}
-                  >
-                    {formData.frameText}
+                {/* QR Type Selector */}
+                <div>
+                  <label className="text-sm font-medium text-gray-300">QR Code Type</label>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {QR_TYPES.map((qrType) => (
+                      <button
+                        key={qrType.type}
+                        onClick={() => setFormData({ ...formData, type: qrType.type })}
+                        className={cn(
+                          "flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all",
+                          formData.type === qrType.type
+                            ? "border-violet-500 bg-violet-500/10"
+                            : "border-white/10 hover:border-violet-500/50 bg-white/5"
+                        )}
+                      >
+                        <qrType.icon className="h-5 w-5 text-gray-300" />
+                        <span className="text-xs font-medium text-gray-300">{qrType.label}</span>
+                      </button>
+                    ))}
                   </div>
-                )}
+                </div>
+
+                {/* Tabs for Content/Style/Frame */}
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="w-full bg-white/5 border border-white/10 rounded-xl p-1">
+                    <TabsTrigger value="content" className="flex-1 data-[state=active]:bg-violet-500/20 data-[state=active]:text-white text-gray-400 rounded-lg">
+                      <Type className="h-4 w-4 mr-1.5" />
+                      Content
+                    </TabsTrigger>
+                    <TabsTrigger value="style" className="flex-1 data-[state=active]:bg-violet-500/20 data-[state=active]:text-white text-gray-400 rounded-lg">
+                      <Palette className="h-4 w-4 mr-1.5" />
+                      Style
+                    </TabsTrigger>
+                    <TabsTrigger value="frame" className="flex-1 data-[state=active]:bg-violet-500/20 data-[state=active]:text-white text-gray-400 rounded-lg">
+                      <Frame className="h-4 w-4 mr-1.5" />
+                      Frame
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="content" className="mt-4">
+                    {renderContentForm()}
+                  </TabsContent>
+
+                  <TabsContent value="style" className="mt-4 space-y-6">
+                    {/* Templates */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-300">Quick Templates</label>
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        {STYLE_TEMPLATES.map((template) => (
+                          <button
+                            key={template.id}
+                            onClick={() => applyTemplate(template)}
+                            className="p-3 rounded-xl border border-white/10 hover:border-violet-500/50 transition-all"
+                            style={{ backgroundColor: template.config.bgColor }}
+                          >
+                            <div
+                              className="w-8 h-8 mx-auto rounded"
+                              style={{ backgroundColor: template.config.fgColor }}
+                            />
+                            <span className="text-xs mt-2 block text-center" style={{ color: template.config.fgColor }}>
+                              {template.name}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Custom Colors */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-300">Foreground Color</label>
+                        <div className="flex gap-2 mt-1.5">
+                          <input
+                            type="color"
+                            value={formData.fgColor}
+                            onChange={(e) => setFormData({ ...formData, fgColor: e.target.value })}
+                            className="w-12 h-10 rounded-lg cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={formData.fgColor}
+                            onChange={(e) => setFormData({ ...formData, fgColor: e.target.value })}
+                            className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-300">Background Color</label>
+                        <div className="flex gap-2 mt-1.5">
+                          <input
+                            type="color"
+                            value={formData.bgColor}
+                            onChange={(e) => setFormData({ ...formData, bgColor: e.target.value })}
+                            className="w-12 h-10 rounded-lg cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={formData.bgColor}
+                            onChange={(e) => setFormData({ ...formData, bgColor: e.target.value })}
+                            className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Error Correction */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-300">Error Correction Level</label>
+                      <select
+                        value={formData.level}
+                        onChange={(e) => setFormData({ ...formData, level: e.target.value as "L" | "M" | "Q" | "H" })}
+                        className="w-full mt-1.5 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                      >
+                        <option value="L">Low (7%)</option>
+                        <option value="M">Medium (15%)</option>
+                        <option value="Q">Quartile (25%)</option>
+                        <option value="H">High (30%)</option>
+                      </select>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="frame" className="mt-4 space-y-6">
+                    <div>
+                      <label className="text-sm font-medium text-gray-300">Frame Style</label>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {FRAME_STYLES.map((frame) => (
+                          <button
+                            key={frame.id}
+                            onClick={() => setFormData({ ...formData, frameStyle: frame.id })}
+                            className={cn(
+                              "p-3 rounded-xl border-2 transition-all text-sm",
+                              formData.frameStyle === frame.id
+                                ? "border-violet-500 bg-violet-500/10 text-white"
+                                : "border-white/10 hover:border-violet-500/50 text-gray-300 bg-white/5"
+                            )}
+                          >
+                            {frame.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {formData.frameStyle !== "none" && (
+                      <>
+                        <div>
+                          <label className="text-sm font-medium text-gray-300">Frame Text</label>
+                          <input
+                            placeholder="Scan Me"
+                            value={formData.frameText}
+                            onChange={(e) => setFormData({ ...formData, frameText: e.target.value })}
+                            className="w-full mt-1.5 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-300">Frame Color</label>
+                          <div className="flex gap-2 mt-1.5">
+                            <input
+                              type="color"
+                              value={formData.frameColor}
+                              onChange={(e) => setFormData({ ...formData, frameColor: e.target.value })}
+                              className="w-12 h-10 rounded-lg cursor-pointer"
+                            />
+                            <input
+                              type="text"
+                              value={formData.frameColor}
+                              onChange={(e) => setFormData({ ...formData, frameColor: e.target.value })}
+                              className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-2 mt-4">
-                <Button variant="outline" className="flex-1" onClick={() => downloadQR("png")}>
-                  <Download className="h-4 w-4" />
-                  PNG
-                </Button>
-                <Button variant="outline" className="flex-1" onClick={() => downloadQR("svg")}>
-                  <Download className="h-4 w-4" />
-                  SVG
-                </Button>
-                <Button variant="outline" onClick={copyToClipboard}>
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
+              {/* Right: Preview */}
+              <div className="lg:sticky lg:top-0">
+                <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                  <h3 className="text-sm font-medium text-gray-300 mb-4">Preview</h3>
+                  <div
+                    ref={qrRef}
+                    className="rounded-xl p-8 flex items-center justify-center mb-4"
+                    style={{ backgroundColor: formData.bgColor }}
+                  >
+                    <QRCodeCanvas
+                      value={generateContent()}
+                      size={formData.size}
+                      fgColor={formData.fgColor}
+                      bgColor={formData.bgColor}
+                      level={formData.level}
+                      includeMargin
+                    />
+                  </div>
+
+                  {/* Download Actions */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => downloadQR("png")}
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-gray-300 text-sm transition-colors"
+                    >
+                      <Download className="h-4 w-4" />
+                      PNG
+                    </button>
+                    <button
+                      onClick={() => downloadQR("svg")}
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-gray-300 text-sm transition-colors"
+                    >
+                      <Download className="h-4 w-4" />
+                      SVG
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={copyToClipboard}
+                    className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-gray-300 text-sm transition-colors"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-4 w-4 text-emerald-400" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4" />
+                        Copy to Clipboard
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <DialogFooter className="mt-6">
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave}>Save QR Code</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+            <DialogFooter className="mt-6 pt-4 border-t border-white/10">
+              <button
+                onClick={() => setShowCreateDialog(false)}
+                className="px-6 py-2.5 text-gray-400 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-medium rounded-xl transition-all"
+              >
+                Save QR Code
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
   );
 }
