@@ -8,13 +8,12 @@ export async function middleware(request: NextRequest) {
   // Skip for localhost and the main app domain
   const mainDomains = [
     "localhost",
-    "localhost:3000",
-    "localhost:3001",
-    "localhost:3002",
     "127.0.0.1",
     "linkforge.io",
     "www.linkforge.io",
     "linkforge.vercel.app",
+    "linkforge-saas.vercel.app",
+    "linkforge-saas-atif-lovs-projects.vercel.app",
   ];
 
   // Check if this is the main domain (also handle ports)
