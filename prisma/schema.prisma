@@ -185,7 +185,6 @@ model ShortLink {
   longUrl       String
   title         String?
   description   String?
-  usernamePrefix String?
 
   workspaceId   String?
   workspace     Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)

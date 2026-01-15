@@ -9,6 +9,8 @@ import {
   verifyPasswordSessionToken,
 } from "@/lib/redirect";
 
+export const dynamic = "force-dynamic";
+
 // Rate limiting for custom domain redirects
 const redirectRateLimitStore = new Map<string, { count: number; resetAt: number }>();
 const REDIRECT_RATE_LIMIT = 1000;
