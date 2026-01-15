@@ -1,19 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 
+// Helper to get or create default workspace
+async function getOrCreateDefaultWorkspace() {
+  const defaultSlug = "default";
+  let workspace = await prisma.workspace.findUnique({
+    where: { slug: defaultSlug },
+  });
+  if (!workspace) {
+    workspace = await prisma.workspace.create({
+      data: {
+        name: "My Workspace",
+        slug: defaultSlug,
+        plan: "free",
+        linksLimit: 100,
+        qrLimit: 50,
+        domainsLimit: 2,
+      },
+    });
+  }
+  return workspace;
+}
+
 // GET /api/pages - List all pages
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const workspaceId = searchParams.get("workspaceId");
     const type = searchParams.get("type");
     const status = searchParams.get("status");
 
-    if (!workspaceId) {
-      return NextResponse.json({ error: "Workspace ID required" }, { status: 400 });
-    }
-
-    const where: any = { workspaceId };
+    const workspace = await getOrCreateDefaultWorkspace();
+    const where: any = { workspaceId: workspace.id };
     if (type) where.type = type;
     if (status) where.status = status;
 
@@ -40,7 +57,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
-      workspaceId,
       slug,
       title,
       description,
@@ -51,16 +67,18 @@ export async function POST(request: NextRequest) {
       status = "draft",
     } = body;
 
-    if (!workspaceId || !slug || !title) {
+    if (!slug || !title) {
       return NextResponse.json(
-        { error: "Workspace ID, slug, and title are required" },
+        { error: "Slug and title are required" },
         { status: 400 }
       );
     }
 
+    const workspace = await getOrCreateDefaultWorkspace();
+
     // Check if slug already exists in workspace
     const existing = await prisma.page.findUnique({
-      where: { workspaceId_slug: { workspaceId, slug } },
+      where: { workspaceId_slug: { workspaceId: workspace.id, slug } },
     });
 
     if (existing) {
@@ -72,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     const page = await prisma.page.create({
       data: {
-        workspaceId,
+        workspaceId: workspace.id,
         slug,
         title,
         description: description || null,

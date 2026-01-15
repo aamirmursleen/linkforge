@@ -147,7 +147,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const shortUrl = buildShortUrl(shortCode, domain?.domain);
+    // Build short URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    let shortUrl: string;
+    if (domain?.domain) {
+      shortUrl = `https://${domain.domain}/${shortCode}`;
+    } else {
+      shortUrl = `${baseUrl}/r/${shortCode}`;
+    }
 
     return NextResponse.json({
       success: true,

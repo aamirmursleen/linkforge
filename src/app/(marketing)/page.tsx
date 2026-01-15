@@ -124,8 +124,7 @@ export default function HomePage() {
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-dark leading-[1.1] tracking-tight mb-6">
-              Shorten links.
-              <span className="text-primary"> Amplify results.</span>
+              Shorten links. <span className="gradient-text">Amplify results.</span>
             </h1>
 
             <p className="text-lg text-muted mb-6 leading-relaxed">

@@ -1,32 +1,74 @@
 import Link from "next/link";
-import { Check, Zap, Clock, Shield, ArrowRight } from "lucide-react";
+import { Check, Zap, Clock, Shield, ArrowRight, X, Link2, QrCode, Globe, BarChart3, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Pricing - Lifetime Deal 90% OFF",
-  description: "Get lifetime access to LinkForge for just $27. One-time payment, no monthly fees. Unlimited links, QR codes, bio pages, analytics, and all premium features.",
-  keywords: ["lifetime deal", "link shortener pricing", "one time payment", "best URL shortener deal"],
+  title: "LinkForge Pricing | Lifetime Deal 90% OFF - $27 One-Time Payment | Best Bitly Alternative",
+  description: "Get lifetime access to LinkForge for just $27 (was $297). Unlimited short links, QR codes, bio pages, 365-day analytics, 10 custom domains, 10 team members. Best Bitly alternative - save $1,713+ over 5 years. No monthly fees, pay once use forever!",
+  keywords: [
+    "linkforge pricing",
+    "lifetime deal",
+    "link shortener pricing",
+    "one time payment URL shortener",
+    "bitly alternative pricing",
+    "cheap link shortener",
+    "URL shortener lifetime deal",
+    "best URL shortener deal",
+    "link management pricing",
+    "QR code generator pricing",
+    "affordable link shortener",
+    "linkforge lifetime",
+    "bitly vs linkforge",
+  ],
   openGraph: {
-    title: "LinkForge Pricing - Lifetime Deal 90% OFF",
-    description: "Pay once, use forever. Get all premium features for just $27.",
+    title: "LinkForge Pricing - Lifetime Deal 90% OFF | $27 One-Time Payment",
+    description: "Pay once, use forever. Get unlimited links, QR codes, analytics & 10 custom domains for just $27. Save $1,713+ vs Bitly over 5 years.",
+    type: "website",
+    images: [
+      {
+        url: "/og-pricing.png",
+        width: 1200,
+        height: 630,
+        alt: "LinkForge Pricing - Lifetime Deal 90% OFF",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LinkForge Lifetime Deal - $27 One-Time Payment | 90% OFF",
+    description: "Unlimited links, QR codes, analytics & custom domains. Pay once, use forever. Best Bitly alternative.",
+  },
+  alternates: {
+    canonical: "https://linkforge.io/pricing",
   },
 };
 
-const features = [
-  "Unlimited short links",
-  "Unlimited QR codes",
-  "Unlimited bio pages",
-  "Advanced analytics (365 days)",
-  "10 custom domains",
-  "10 team members",
-  "Password protected links",
-  "Link expiry dates",
-  "Custom link aliases",
-  "Export analytics (CSV)",
-  "API access",
-  "Priority support",
+const freeFeatures = [
+  { feature: "Short links", value: "25/month", included: true },
+  { feature: "Custom aliases", value: "Yes", included: true },
+  { feature: "QR codes", value: "10/month", included: true },
+  { feature: "Bio pages", value: "1 page", included: true },
+  { feature: "Custom domains", value: "2 domains", included: true },
+  { feature: "Analytics", value: "7 days", included: true },
+  { feature: "Password protected links", value: "No", included: false },
+  { feature: "Link expiry dates", value: "No", included: false },
+  { feature: "Team members", value: "No", included: false },
+  { feature: "API access", value: "No", included: false },
+];
+
+const proFeatures = [
+  { feature: "Short links", value: "Unlimited", included: true },
+  { feature: "Custom aliases", value: "Yes", included: true },
+  { feature: "QR codes", value: "Unlimited", included: true },
+  { feature: "Bio pages", value: "Unlimited", included: true },
+  { feature: "Custom domains", value: "10 domains", included: true },
+  { feature: "Analytics", value: "365 days", included: true },
+  { feature: "Password protected links", value: "Yes", included: true },
+  { feature: "Link expiry dates", value: "Yes", included: true },
+  { feature: "Team members", value: "10 members", included: true },
+  { feature: "API access", value: "Yes", included: true },
 ];
 
 export default function PricingPage() {
@@ -45,61 +87,147 @@ export default function PricingPage() {
             No complicated tiers. Get access to all features at one simple price.
           </p>
 
-          {/* Single Pricing Card */}
-          <div className="max-w-lg mx-auto">
-            <div className="relative bg-white rounded-3xl border-2 border-[var(--primary)] shadow-2xl p-8 md:p-10">
-              {/* Sale Badge */}
+          {/* Pricing Cards - Free vs Pro */}
+          <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
+            {/* Free Plan */}
+            <div className="bg-white rounded-3xl border-2 border-gray-200 p-8">
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-[var(--dark)] mb-2">Free</h3>
+                <p className="text-[var(--muted)]">Perfect to get started</p>
+              </div>
+
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-[var(--dark)]">$0</span>
+                <span className="text-[var(--muted)]">/forever</span>
+              </div>
+
+              <Button variant="outline" size="lg" className="w-full mb-6" asChild>
+                <Link href="/sign-up">Start Free</Link>
+              </Button>
+
+              <div className="space-y-3">
+                {freeFeatures.map((item) => (
+                  <div key={item.feature} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {item.included ? (
+                        <Check className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <X className="w-4 h-4 text-gray-300" />
+                      )}
+                      <span className={item.included ? "text-[var(--dark)]" : "text-gray-400"}>{item.feature}</span>
+                    </div>
+                    <span className={`text-sm font-medium ${item.included ? "text-[var(--primary)]" : "text-gray-400"}`}>
+                      {item.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Pro Plan */}
+            <div className="relative bg-white rounded-3xl border-2 border-[var(--primary)] shadow-2xl p-8">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                 <Badge className="bg-red-500 text-white px-4 py-1 text-sm">
-                  <Zap className="w-4 h-4 mr-1" /> LIFETIME DEAL
+                  <Zap className="w-4 h-4 mr-1" /> LIFETIME DEAL - 90% OFF
                 </Badge>
               </div>
 
-              <div className="mb-8">
-                <h3 className="text-2xl font-bold text-[var(--dark)] mb-2">LinkForge Pro</h3>
-                <p className="text-[var(--muted)]">Everything you need to manage your links</p>
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-[var(--dark)] mb-2">Pro</h3>
+                <p className="text-[var(--muted)]">Everything unlimited</p>
               </div>
 
-              {/* Price */}
-              <div className="mb-8">
-                <div className="flex items-center justify-center gap-3 mb-2">
-                  <span className="text-2xl text-[var(--muted)] line-through">$297</span>
-                  <span className="text-5xl md:text-6xl font-bold text-[var(--dark)]">$27</span>
-                </div>
-                <p className="text-lg text-green-600 font-semibold">One-time payment • Lifetime access</p>
-                <p className="text-sm text-[var(--muted)] mt-1">No monthly fees. Pay once, use forever.</p>
+              <div className="mb-6">
+                <span className="text-xl text-[var(--muted)] line-through mr-2">$297</span>
+                <span className="text-4xl font-bold text-[var(--dark)]">$27</span>
+                <span className="text-[var(--muted)]"> one-time</span>
               </div>
 
-              {/* CTA Button */}
-              <Button size="lg" className="w-full text-lg py-6 mb-8" asChild>
+              <Button size="lg" className="w-full mb-6" asChild>
                 <Link href="/sign-up">
-                  Get Lifetime Access - $27
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  Get Lifetime Access
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
 
-              {/* Features Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
-                {features.map((feature) => (
-                  <div key={feature} className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-green-600" />
+              <div className="space-y-3">
+                {proFeatures.map((item) => (
+                  <div key={item.feature} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span className="text-[var(--dark)]">{item.feature}</span>
                     </div>
-                    <span className="text-sm text-[var(--dark)]">{feature}</span>
+                    <span className="text-sm font-medium text-[var(--primary)]">{item.value}</span>
                   </div>
                 ))}
               </div>
 
-              {/* Trust Badges */}
-              <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-center gap-6 text-sm text-[var(--muted)]">
+              <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-center gap-6 text-sm text-[var(--muted)]">
                 <div className="flex items-center gap-1">
                   <Shield className="w-4 h-4" />
-                  <span>Secure Payment</span>
+                  <span>30-day guarantee</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  <span>Cancel Anytime</span>
-                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How Features Work */}
+      <section className="section bg-gray-50">
+        <div className="container">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-[var(--dark)] mb-4">
+              How It Works
+            </h2>
+            <p className="text-lg text-[var(--muted)]">
+              Simple steps to create your branded short links
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Normal Short Link */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-200">
+              <div className="w-12 h-12 rounded-xl bg-[var(--primary-pale)] flex items-center justify-center mb-4">
+                <Link2 className="w-6 h-6 text-[var(--primary)]" />
+              </div>
+              <h3 className="text-lg font-semibold text-[var(--dark)] mb-2">1. Basic Short Link</h3>
+              <p className="text-sm text-[var(--muted)] mb-4">Paste any long URL and get a short link instantly</p>
+              <div className="bg-gray-100 rounded-lg p-3 text-sm">
+                <div className="text-gray-500 mb-1">Long URL:</div>
+                <div className="text-xs text-gray-600 truncate mb-2">youtube.com/watch?v=abc...</div>
+                <div className="text-gray-500 mb-1">Short URL:</div>
+                <div className="text-[var(--primary)] font-medium">linkforge.io/r/xYz123</div>
+              </div>
+            </div>
+
+            {/* Custom Alias */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-200">
+              <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mb-4">
+                <span className="text-green-600 font-bold text-lg">/a</span>
+              </div>
+              <h3 className="text-lg font-semibold text-[var(--dark)] mb-2">2. Custom Alias</h3>
+              <p className="text-sm text-[var(--muted)] mb-4">Choose your own memorable slug</p>
+              <div className="bg-gray-100 rounded-lg p-3 text-sm">
+                <div className="text-gray-500 mb-1">Instead of random code:</div>
+                <div className="text-gray-400 line-through mb-2">linkforge.io/r/xYz123</div>
+                <div className="text-gray-500 mb-1">Use your own:</div>
+                <div className="text-green-600 font-medium">linkforge.io/r/my-promo</div>
+              </div>
+            </div>
+
+            {/* Custom Domain */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-200">
+              <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center mb-4">
+                <Globe className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-[var(--dark)] mb-2">3. Custom Domain</h3>
+              <p className="text-sm text-[var(--muted)] mb-4">Use your own branded domain</p>
+              <div className="bg-gray-100 rounded-lg p-3 text-sm">
+                <div className="text-gray-500 mb-1">Instead of LinkForge domain:</div>
+                <div className="text-gray-400 line-through mb-2">linkforge.io/r/promo</div>
+                <div className="text-gray-500 mb-1">Use your brand:</div>
+                <div className="text-purple-600 font-medium">links.yoursite.com/promo</div>
               </div>
             </div>
           </div>
@@ -111,7 +239,7 @@ export default function PricingPage() {
         <div className="container">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-[var(--dark)] mb-4">
-              Everything included in your plan
+              Everything included in Pro
             </h2>
             <p className="text-lg text-[var(--muted)]">
               No hidden fees. No feature limits. No surprises.
@@ -142,14 +270,14 @@ export default function PricingPage() {
               ]}
             />
             <FeatureCard
-              title="Team & Advanced"
+              title="Branding & Team"
               features={[
-                "10 team members",
                 "10 custom domains",
+                "Custom link aliases",
+                "10 team members",
                 "Unlimited bio pages",
                 "API access",
                 "Priority support",
-                "No branding",
               ]}
             />
           </div>
@@ -171,20 +299,24 @@ export default function PricingPage() {
               a="Yes! Pay once and get lifetime access to all features. No recurring fees, no hidden charges."
             />
             <FAQ
-              q="What does lifetime access mean?"
-              a="You pay once and use LinkForge forever. All current features plus all future updates included."
+              q="What is a Custom Domain?"
+              a="Instead of linkforge.io/r/abc123, you can use your own domain like links.yoursite.com/promo. Free users get 2 custom domains, Pro gets 10."
             />
             <FAQ
-              q="How long will this deal last?"
-              a="This is a limited-time offer. Once the deal ends, we'll switch to monthly pricing. Lock in your lifetime access now!"
+              q="What is a Custom Alias?"
+              a="Instead of random codes like /r/xYz123, you can create memorable links like /r/my-promo or /r/summer-sale. Available for both Free and Pro users."
+            />
+            <FAQ
+              q="How do Custom Domains work?"
+              a="1) Add your domain in settings, 2) Add a CNAME record pointing to us, 3) Verify it, 4) Start creating branded short links!"
+            />
+            <FAQ
+              q="What's included in Free plan?"
+              a="25 links/month, 10 QR codes, 1 bio page, 2 custom domains, custom aliases, and 7-day analytics. No credit card required!"
             />
             <FAQ
               q="Is there a money-back guarantee?"
               a="Yes! We offer a 30-day money-back guarantee. If you're not satisfied, we'll refund you - no questions asked."
-            />
-            <FAQ
-              q="What payment methods do you accept?"
-              a="We accept all major credit cards and PayPal."
             />
           </div>
         </div>

@@ -26,18 +26,28 @@ import {
   Loader2,
   Sparkles,
   MousePointerClick,
+  Globe,
 } from "lucide-react";
 
 interface ShortLink {
   id: string;
   title: string;
   shortCode: string;
+  shortUrl: string;
   longUrl: string;
+  domain: string | null;
   clickCount: number;
   status: string;
   createdAt: string;
   expiresAt?: string;
   password?: string;
+}
+
+interface CustomDomain {
+  id: string;
+  domain: string;
+  status: string;
+  linksCount: number;
 }
 
 // Glowing Icon Component
@@ -84,15 +94,36 @@ export default function LinksPage() {
   const [expiryDate, setExpiryDate] = useState("");
   const [password, setPassword] = useState("");
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
+  const [domains, setDomains] = useState<CustomDomain[]>([]);
+  const [selectedDomainId, setSelectedDomainId] = useState<string>("");
+  const [domainsLimit, setDomainsLimit] = useState({ used: 0, total: 2 });
 
   const appUrl = typeof window !== "undefined"
     ? window.location.origin
     : "http://localhost:3000";
 
-  // Fetch links from API
+  // Fetch links and domains from API
   useEffect(() => {
     fetchLinks();
+    fetchDomains();
   }, []);
+
+  const fetchDomains = async () => {
+    try {
+      const res = await fetch("/api/domains");
+      const data = await res.json();
+      if (data.success) {
+        // Only show verified domains
+        const verifiedDomains = (data.data || []).filter((d: CustomDomain) => d.status === "verified");
+        setDomains(verifiedDomains);
+        if (data.limits) {
+          setDomainsLimit({ used: data.limits.used, total: data.limits.total });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch domains:", error);
+    }
+  };
 
   const fetchLinks = async () => {
     try {
@@ -136,6 +167,7 @@ export default function LinksPage() {
           longUrl: url,
           title: linkTitle || undefined,
           customCode: customAlias || undefined,
+          domainId: selectedDomainId || undefined,
           expiresAt: expiryDate || undefined,
           password: password || undefined,
         }),
@@ -150,9 +182,10 @@ export default function LinksPage() {
         setLinkTitle("");
         setExpiryDate("");
         setPassword("");
+        setSelectedDomainId("");
         setShowAdvanced(false);
         setIsCreating(false);
-        navigator.clipboard.writeText(`${appUrl}/r/${data.data.shortCode}`);
+        navigator.clipboard.writeText(data.data.shortUrl);
         setCopiedId(data.data.id);
         setTimeout(() => setCopiedId(null), 2000);
       } else {
@@ -168,9 +201,18 @@ export default function LinksPage() {
 
   // Copy link to clipboard
   const handleCopy = (link: ShortLink) => {
-    navigator.clipboard.writeText(`${appUrl}/r/${link.shortCode}`);
+    const url = link.shortUrl || `${appUrl}/r/${link.shortCode}`;
+    navigator.clipboard.writeText(url);
     setCopiedId(link.id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // Get display URL for a link
+  const getDisplayUrl = (link: ShortLink) => {
+    if (link.domain) {
+      return `${link.domain}/${link.shortCode}`;
+    }
+    return `${appUrl.replace(/https?:\/\//, "")}/r/${link.shortCode}`;
   };
 
   // Delete link
@@ -327,11 +369,41 @@ export default function LinksPage() {
                 {/* Advanced Options */}
                 {showAdvanced && (
                   <div className="grid md:grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                    {/* Custom Domain Selection */}
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="text-sm font-medium text-gray-300">
+                        <Globe className="h-4 w-4 inline mr-1" />
+                        Custom Domain
+                      </label>
+                      <select
+                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                        value={selectedDomainId}
+                        onChange={(e) => setSelectedDomainId(e.target.value)}
+                      >
+                        <option value="">Default (LinkForge)</option>
+                        {domains.map((domain) => (
+                          <option key={domain.id} value={domain.id}>
+                            {domain.domain} ({domain.linksCount} links)
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500">
+                        {domains.length === 0 ? (
+                          <span>No custom domains configured. <a href="/app/domains" className="text-violet-400 hover:underline">Add a domain</a></span>
+                        ) : (
+                          <span>Using {domainsLimit.used} of {domainsLimit.total} custom domains</span>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Custom Alias */}
                     <div className="space-y-2 md:col-span-2">
                       <label className="text-sm font-medium text-gray-300">Custom Alias</label>
                       <div className="flex items-center">
                         <span className="px-3 py-2.5 bg-white/10 rounded-l-xl text-sm text-gray-400 border border-white/10 border-r-0">
-                          {appUrl.replace(/https?:\/\//, "")}/r/
+                          {selectedDomainId
+                            ? domains.find(d => d.id === selectedDomainId)?.domain + "/"
+                            : appUrl.replace(/https?:\/\//, "") + "/r/"}
                         </span>
                         <input
                           placeholder="your-custom-link"
@@ -414,13 +486,18 @@ export default function LinksPage() {
                             </div>
                             <div className="flex items-center gap-2 text-sm">
                               <a
-                                href={`${appUrl}/r/${link.shortCode}`}
+                                href={link.shortUrl || `${appUrl}/r/${link.shortCode}`}
                                 className="text-violet-400 font-medium hover:text-violet-300 transition-colors"
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
-                                {appUrl.replace(/https?:\/\//, "")}/r/{link.shortCode}
+                                {getDisplayUrl(link)}
                               </a>
+                              {link.domain && (
+                                <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-violet-500/20 text-violet-400">
+                                  custom
+                                </span>
+                              )}
                               <button
                                 className="p-1 hover:bg-white/10 rounded transition-colors"
                                 onClick={() => handleCopy(link)}
@@ -481,7 +558,7 @@ export default function LinksPage() {
                                 <div className="absolute right-0 top-full mt-1 w-48 bg-[#1a1425] backdrop-blur-xl rounded-xl shadow-xl border border-white/10 py-1 z-10">
                                   <button
                                     className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-white/10 flex items-center gap-2 transition-colors"
-                                    onClick={() => window.open(`${appUrl}/r/${link.shortCode}`, "_blank")}
+                                    onClick={() => window.open(link.shortUrl || `${appUrl}/r/${link.shortCode}`, "_blank")}
                                   >
                                     <ExternalLink className="h-4 w-4" />
                                     Open Link

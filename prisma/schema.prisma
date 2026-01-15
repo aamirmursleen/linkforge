@@ -23,7 +23,7 @@ model Workspace {
   plan        String   @default("free")
   linksLimit  Int      @default(5)
   qrLimit     Int      @default(2)
-  domainsLimit Int     @default(0)
+  domainsLimit Int     @default(2)
 
   linksUsed   Int      @default(0)
   qrUsed      Int      @default(0)
@@ -185,6 +185,7 @@ model ShortLink {
   longUrl       String
   title         String?
   description   String?
+  usernamePrefix String?
 
   workspaceId   String?
   workspace     Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)

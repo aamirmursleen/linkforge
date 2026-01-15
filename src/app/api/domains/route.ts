@@ -7,21 +7,38 @@ import {
   getDNSInstructions,
 } from "@/lib/domains";
 
-// GET /api/domains - List all domains for workspace
+// Helper to get or create default workspace
+async function getOrCreateDefaultWorkspace() {
+  const defaultSlug = "default";
+
+  let workspace = await prisma.workspace.findUnique({
+    where: { slug: defaultSlug },
+  });
+
+  if (!workspace) {
+    workspace = await prisma.workspace.create({
+      data: {
+        name: "My Workspace",
+        slug: defaultSlug,
+        plan: "free",
+        linksLimit: 100,
+        qrLimit: 50,
+        domainsLimit: 2,
+      },
+    });
+  }
+
+  return workspace;
+}
+
+// GET /api/domains - List all domains
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const workspaceId = searchParams.get("workspaceId");
-
-    if (!workspaceId) {
-      return NextResponse.json(
-        { error: "Workspace ID is required" },
-        { status: 400 }
-      );
-    }
+    // Get or create default workspace
+    const workspace = await getOrCreateDefaultWorkspace();
 
     const domains = await prisma.domain.findMany({
-      where: { workspaceId },
+      where: { workspaceId: workspace.id },
       orderBy: { createdAt: "desc" },
       include: {
         _count: {
@@ -44,6 +61,11 @@ export async function GET(request: NextRequest) {
         createdAt: domain.createdAt,
         dnsInstructions: getDNSInstructions(domain.domain, domain.verificationToken),
       })),
+      limits: {
+        used: domains.length,
+        total: workspace.domainsLimit,
+        plan: workspace.plan,
+      },
     });
   } catch (error) {
     console.error("Error fetching domains:", error);
@@ -58,11 +80,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { domain: rawDomain, workspaceId } = body;
+    const { domain: rawDomain } = body;
 
-    if (!rawDomain || !workspaceId) {
+    if (!rawDomain) {
       return NextResponse.json(
-        { error: "Domain and workspace ID are required" },
+        { error: "Domain is required" },
         { status: 400 }
       );
     }
@@ -79,28 +101,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check workspace exists and domain limits
-    const workspace = await prisma.workspace.findUnique({
-      where: { id: workspaceId },
-      include: {
-        _count: {
-          select: { domains: true },
-        },
-      },
+    // Get or create default workspace
+    const workspace = await getOrCreateDefaultWorkspace();
+
+    // Count existing domains
+    const domainCount = await prisma.domain.count({
+      where: { workspaceId: workspace.id },
     });
 
-    if (!workspace) {
-      return NextResponse.json(
-        { error: "Workspace not found" },
-        { status: 404 }
-      );
-    }
-
-    // Check domain limit
-    if (workspace._count.domains >= workspace.domainsLimit) {
+    // Check domain limit (free tier = 2 domains)
+    if (domainCount >= workspace.domainsLimit) {
       return NextResponse.json(
         {
-          error: `Domain limit reached. Your plan allows ${workspace.domainsLimit} custom domains. Please upgrade to add more.`,
+          error: `Domain limit reached. Free plan allows ${workspace.domainsLimit} custom domains. Upgrade for unlimited domains.`,
         },
         { status: 403 }
       );
@@ -124,7 +137,7 @@ export async function POST(request: NextRequest) {
     // Create domain
     const newDomain = await prisma.domain.create({
       data: {
-        workspaceId,
+        workspaceId: workspace.id,
         domain,
         verificationToken,
         status: "pending",

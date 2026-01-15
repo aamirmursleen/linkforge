@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppHeader } from "@/components/app/app-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,7 @@ import {
   Palette,
   Sparkles,
   Layers,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -107,6 +108,8 @@ export default function PagesPage() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingPage, setEditingPage] = useState<Page | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [newPage, setNewPage] = useState({
     title: "",
     slug: "",
@@ -115,6 +118,26 @@ export default function PagesPage() {
     theme: "default",
   });
   const [blocks, setBlocks] = useState<Block[]>([]);
+
+  // Fetch pages on mount
+  useEffect(() => {
+    fetchPages();
+  }, []);
+
+  const fetchPages = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/pages");
+      const data = await res.json();
+      if (data.success) {
+        setPages(data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching pages:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredPages = pages.filter(
     (page) =>
@@ -131,25 +154,38 @@ export default function PagesPage() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const handleCreate = () => {
-    const page: Page = {
-      id: Date.now().toString(),
-      slug: newPage.slug.toLowerCase().replace(/\s+/g, "-"),
-      title: newPage.title,
-      description: newPage.description || null,
-      type: newPage.type,
-      status: "draft",
-      theme: newPage.theme,
-      blocks: [],
-      viewCount: 0,
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    setPages([page, ...pages]);
-    setShowCreateDialog(false);
-    setNewPage({ title: "", slug: "", description: "", type: "bio", theme: "default" });
-    setEditingPage(page);
-    setBlocks(page.blocks);
-    setShowEditDialog(true);
+  const handleCreate = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/pages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: newPage.slug.toLowerCase().replace(/\s+/g, "-"),
+          title: newPage.title,
+          description: newPage.description || null,
+          type: newPage.type,
+          theme: newPage.theme,
+          blocks: [],
+          status: "draft",
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPages([data.data, ...pages]);
+        setShowCreateDialog(false);
+        setNewPage({ title: "", slug: "", description: "", type: "bio", theme: "default" });
+        setEditingPage(data.data);
+        setBlocks(data.data.blocks || []);
+        setShowEditDialog(true);
+      } else {
+        alert(data.error || "Failed to create page");
+      }
+    } catch (error) {
+      alert("Failed to create page");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleEdit = (page: Page) => {
@@ -158,15 +194,27 @@ export default function PagesPage() {
     setShowEditDialog(true);
   };
 
-  const handleSaveBlocks = () => {
-    if (editingPage) {
-      setPages(
-        pages.map((p) =>
-          p.id === editingPage.id ? { ...editingPage, blocks } : p
-        )
-      );
-      setShowEditDialog(false);
-      setEditingPage(null);
+  const handleSaveBlocks = async () => {
+    if (!editingPage) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/pages/${editingPage.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blocks }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPages(pages.map((p) => p.id === editingPage.id ? { ...p, blocks } : p));
+        setShowEditDialog(false);
+        setEditingPage(null);
+      } else {
+        alert(data.error || "Failed to save");
+      }
+    } catch (error) {
+      alert("Failed to save changes");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -222,18 +270,36 @@ export default function PagesPage() {
     setBlocks(newBlocks);
   };
 
-  const deletePage = (id: string) => {
-    setPages(pages.filter((p) => p.id !== id));
+  const deletePage = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this page?")) return;
+    try {
+      const res = await fetch(`/api/pages/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        setPages(pages.filter((p) => p.id !== id));
+      }
+    } catch (error) {
+      alert("Failed to delete page");
+    }
   };
 
-  const togglePublish = (id: string) => {
-    setPages(
-      pages.map((p) =>
-        p.id === id
-          ? { ...p, status: p.status === "published" ? "draft" : "published" }
-          : p
-      )
-    );
+  const togglePublish = async (id: string) => {
+    const page = pages.find(p => p.id === id);
+    if (!page) return;
+    const newStatus = page.status === "published" ? "draft" : "published";
+    try {
+      const res = await fetch(`/api/pages/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPages(pages.map((p) => p.id === id ? { ...p, status: newStatus } : p));
+      }
+    } catch (error) {
+      alert("Failed to update page");
+    }
   };
 
   const inputClass = "w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50";
@@ -514,7 +580,12 @@ export default function PagesPage() {
           </div>
 
           {/* Pages Grid */}
-          {filteredPages.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-violet-400" />
+              <p className="text-sm text-gray-400 mt-2">Loading pages...</p>
+            </div>
+          ) : filteredPages.length > 0 ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPages.map((page, index) => {
                 const colors = ["bg-violet-500", "bg-emerald-500", "bg-cyan-500", "bg-amber-500", "bg-rose-500", "bg-blue-500"];
@@ -724,10 +795,11 @@ export default function PagesPage() {
               </button>
               <button
                 onClick={handleCreate}
-                disabled={!newPage.title || !newPage.slug}
-                className="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all"
+                disabled={!newPage.title || !newPage.slug || saving}
+                className="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all flex items-center gap-2"
               >
-                Create & Edit
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {saving ? "Creating..." : "Create & Edit"}
               </button>
             </DialogFooter>
           </DialogContent>
@@ -927,9 +999,11 @@ export default function PagesPage() {
               </button>
               <button
                 onClick={handleSaveBlocks}
-                className="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-medium rounded-xl transition-all"
+                disabled={saving}
+                className="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 disabled:opacity-50 text-white font-medium rounded-xl transition-all flex items-center gap-2"
               >
-                Save Changes
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {saving ? "Saving..." : "Save Changes"}
               </button>
             </DialogFooter>
           </DialogContent>

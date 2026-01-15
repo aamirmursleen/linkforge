@@ -55,11 +55,9 @@ export default function DomainsPage() {
   const [verifying, setVerifying] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
-  const workspaceId = "demo-workspace";
-
   const fetchDomains = async () => {
     try {
-      const res = await fetch(`/api/domains?workspaceId=${workspaceId}`);
+      const res = await fetch("/api/domains");
       const data = await res.json();
       if (data.success) setDomains(data.data);
     } catch (err) {
@@ -79,7 +77,7 @@ export default function DomainsPage() {
       const res = await fetch("/api/domains", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain: newDomain, workspaceId }),
+        body: JSON.stringify({ domain: newDomain }),
       });
       const data = await res.json();
       if (res.ok) { setNewDomain(""); fetchDomains(); }
