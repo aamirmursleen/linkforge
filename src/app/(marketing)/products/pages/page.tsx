@@ -73,7 +73,7 @@ export default function PagesProductPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" asChild>
-                  <Link href="/signup">
+                  <Link href="/app/pages?create=true">
                     Create a page
                     <ArrowRight className="h-5 w-5" />
                   </Link>
@@ -179,7 +179,7 @@ export default function PagesProductPage() {
             No coding required. Create a beautiful page in minutes.
           </p>
           <Button size="lg" className="bg-white text-[var(--primary)] hover:bg-white/90" asChild>
-            <Link href="/signup">
+            <Link href="/app/pages?create=true">
               Get started free
               <ArrowRight className="h-5 w-5" />
             </Link>

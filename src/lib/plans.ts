@@ -41,10 +41,10 @@ export const PLANS: Record<PlanType, Plan> = {
       yearly: 0,
     },
     features: {
-      linksPerMonth: 25,
-      qrCodesPerMonth: 10,
+      linksPerMonth: 10,
+      qrCodesPerMonth: 5,
       bioPages: 1,
-      analyticsRetentionDays: 7,
+      analyticsRetentionDays: 30,
       customDomains: 0,
       teamMembers: 1,
       apiAccess: false,

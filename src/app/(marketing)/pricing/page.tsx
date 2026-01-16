@@ -46,12 +46,12 @@ export const metadata: Metadata = {
 };
 
 const freeFeatures = [
-  { feature: "Short links", value: "25/month", included: true },
-  { feature: "Custom aliases", value: "Yes", included: true },
-  { feature: "QR codes", value: "10/month", included: true },
+  { feature: "Short links", value: "10/month", included: true },
+  { feature: "Custom aliases", value: "No", included: false },
+  { feature: "QR codes", value: "5/month", included: true },
   { feature: "Bio pages", value: "1 page", included: true },
-  { feature: "Custom domains", value: "2 domains", included: true },
-  { feature: "Analytics", value: "7 days", included: true },
+  { feature: "Custom domains", value: "No", included: false },
+  { feature: "Analytics", value: "30 days", included: true },
   { feature: "Password protected links", value: "No", included: false },
   { feature: "Link expiry dates", value: "No", included: false },
   { feature: "Team members", value: "No", included: false },
@@ -312,7 +312,7 @@ export default function PricingPage() {
             />
             <FAQ
               q="What's included in Free plan?"
-              a="25 links/month, 10 QR codes, 1 bio page, 2 custom domains, custom aliases, and 7-day analytics. No credit card required!"
+              a="10 links/month, 5 QR codes, 1 bio page, 30-day analytics, and full click tracking. No credit card required!"
             />
             <FAQ
               q="Is there a money-back guarantee?"
