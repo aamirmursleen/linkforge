@@ -336,10 +336,48 @@ model Page {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  views         PageView[]
+
   @@unique([workspaceId, slug])
   @@index([workspaceId])
   @@index([slug])
   @@index([status])
+}
+
+// ============================================
+// PAGE VIEWS (Analytics)
+// ============================================
+
+model PageView {
+  id            String   @id @default(cuid())
+  pageId        String
+  page          Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  viewedAt      DateTime @default(now())
+
+  referrer      String?
+  referrerHost  String?
+  source        String?
+
+  userAgentRaw  String?
+  deviceType    String?
+  os            String?
+  browser       String?
+
+  country       String?
+  region        String?
+  city          String?
+
+  ipHash        String?
+
+  isBot         Boolean  @default(false)
+
+  @@index([pageId])
+  @@index([viewedAt])
+  @@index([pageId, viewedAt])
+  @@index([source])
+  @@index([deviceType])
+  @@index([country])
 }
 
 // ============================================

@@ -54,6 +54,15 @@ import {
   ShoppingBag,
   Calendar,
   FileInput,
+  Download,
+  BarChart3,
+  Share2,
+  ExternalLink,
+  TrendingUp,
+  TrendingDown,
+  Monitor,
+  Tablet,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -196,6 +205,12 @@ function PagesContent() {
   // Dialog states
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [showEditorDialog, setShowEditorDialog] = useState(false);
+  const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [selectedPageForAction, setSelectedPageForAction] = useState<Page | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   // Editor states
   const [editingPage, setEditingPage] = useState<Page | null>(null);
@@ -253,6 +268,55 @@ function PagesContent() {
     setCopied(slug);
     setTimeout(() => setCopied(null), 2000);
   };
+
+  // Download page as HTML
+  const downloadPage = async (page: Page) => {
+    setDownloadingId(page.id);
+    try {
+      const res = await fetch(`/api/pages/${page.id}/download`);
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${page.slug}-page.html`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      alert("Failed to download page");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  // Open analytics
+  const openAnalytics = async (page: Page) => {
+    setSelectedPageForAction(page);
+    setShowAnalyticsDialog(true);
+    setAnalyticsLoading(true);
+    try {
+      const res = await fetch(`/api/pages/${page.id}/analytics?days=30`);
+      const data = await res.json();
+      if (data.success) {
+        setAnalyticsData(data.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch analytics:", error);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  // Open share dialog
+  const openShare = (page: Page) => {
+    setSelectedPageForAction(page);
+    setShowShareDialog(true);
+  };
+
+  // Get page URL
+  const getPageUrl = (slug: string) => `${window.location.origin}/bio/${slug}`;
 
   // Start creating a new page
   const startCreatePage = () => {
@@ -836,18 +900,31 @@ function PagesContent() {
                     <span>{page.viewCount} views</span>
                     <span>{page.blocks.length} blocks</span>
                   </div>
-                  <div className="flex items-center gap-2 pt-3 mt-3 border-t border-slate-100">
-                    <button onClick={() => handleEdit(page)} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 text-sm transition-colors">
+                  {/* Quick Actions Row */}
+                  <div className="flex items-center gap-1 pt-3 mt-3 border-t border-slate-100">
+                    <button onClick={() => openShare(page)} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 bg-violet-50 hover:bg-violet-100 rounded-lg text-violet-700 text-sm font-medium transition-colors">
+                      <Share2 className="h-4 w-4" /> Share
+                    </button>
+                    <button onClick={() => openAnalytics(page)} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg text-blue-700 text-sm font-medium transition-colors">
+                      <BarChart3 className="h-4 w-4" /> Stats
+                    </button>
+                    <button onClick={() => handleEdit(page)} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 text-sm font-medium transition-colors">
                       <Edit className="h-4 w-4" /> Edit
                     </button>
-                    <button onClick={() => window.open(`/bio/${page.slug}`, "_blank")} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                      <Eye className="h-4 w-4 text-slate-500" />
+                  </div>
+                  {/* Secondary Actions Row */}
+                  <div className="flex items-center gap-1 mt-2">
+                    <button onClick={() => downloadPage(page)} disabled={downloadingId === page.id} className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors">
+                      {downloadingId === page.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />} Download
                     </button>
-                    <button onClick={() => togglePublish(page.id)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                      {page.status === "published" ? <Lock className="h-4 w-4 text-slate-500" /> : <Globe className="h-4 w-4 text-slate-500" />}
+                    <button onClick={() => window.open(`/bio/${page.slug}`, "_blank")} className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors">
+                      <ExternalLink className="h-3 w-3" /> Preview
                     </button>
-                    <button onClick={() => deletePage(page.id)} className="p-2 hover:bg-red-50 rounded-lg transition-colors">
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                    <button onClick={() => togglePublish(page.id)} className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded transition-colors">
+                      {page.status === "published" ? <><Lock className="h-3 w-3" /> Unpublish</> : <><Globe className="h-3 w-3" /> Publish</>}
+                    </button>
+                    <button onClick={() => deletePage(page.id)} className="px-2 py-1.5 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors">
+                      <Trash2 className="h-3 w-3" />
                     </button>
                   </div>
                 </div>
@@ -1114,6 +1191,289 @@ function PagesContent() {
               </button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============ ANALYTICS DIALOG ============ */}
+      <Dialog open={showAnalyticsDialog} onOpenChange={setShowAnalyticsDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-blue-500" />
+              Analytics: {selectedPageForAction?.title}
+            </DialogTitle>
+            <DialogDescription>
+              View statistics for /bio/{selectedPageForAction?.slug}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto py-4">
+            {analyticsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              </div>
+            ) : analyticsData ? (
+              <div className="space-y-6">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-blue-50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-blue-600 mb-1">
+                      <Eye className="h-4 w-4" />
+                      <span className="text-xs font-medium">Total Views</span>
+                    </div>
+                    <div className="text-2xl font-bold text-blue-900">{analyticsData.summary.totalViews.toLocaleString()}</div>
+                  </div>
+                  <div className="bg-green-50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-green-600 mb-1">
+                      <Users className="h-4 w-4" />
+                      <span className="text-xs font-medium">Unique Visitors</span>
+                    </div>
+                    <div className="text-2xl font-bold text-green-900">{analyticsData.summary.uniqueVisitors.toLocaleString()}</div>
+                  </div>
+                  <div className="bg-violet-50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-violet-600 mb-1">
+                      <BarChart3 className="h-4 w-4" />
+                      <span className="text-xs font-medium">Avg/Day</span>
+                    </div>
+                    <div className="text-2xl font-bold text-violet-900">{analyticsData.summary.avgViewsPerDay}</div>
+                  </div>
+                  <div className={cn("rounded-xl p-4", analyticsData.summary.growth >= 0 ? "bg-emerald-50" : "bg-red-50")}>
+                    <div className={cn("flex items-center gap-2 mb-1", analyticsData.summary.growth >= 0 ? "text-emerald-600" : "text-red-600")}>
+                      {analyticsData.summary.growth >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                      <span className="text-xs font-medium">Growth</span>
+                    </div>
+                    <div className={cn("text-2xl font-bold", analyticsData.summary.growth >= 0 ? "text-emerald-900" : "text-red-900")}>
+                      {analyticsData.summary.growth >= 0 ? "+" : ""}{analyticsData.summary.growth}%
+                    </div>
+                  </div>
+                </div>
+
+                {/* Daily Views Chart */}
+                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                  <h3 className="font-semibold text-slate-900 mb-4">Views (Last 30 Days)</h3>
+                  <div className="h-40 flex items-end gap-1">
+                    {analyticsData.dailyViews.map((day: any, i: number) => {
+                      const maxViews = Math.max(...analyticsData.dailyViews.map((d: any) => d.views), 1);
+                      const height = (day.views / maxViews) * 100;
+                      return (
+                        <div key={i} className="flex-1 flex flex-col items-center group">
+                          <div className="relative w-full">
+                            <div
+                              className="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors"
+                              style={{ height: `${Math.max(height, 2)}px` }}
+                            />
+                            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                              {day.date}: {day.views} views
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Device & Source Stats */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Devices */}
+                  <div className="bg-white rounded-xl border border-slate-200 p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3">Devices</h3>
+                    <div className="space-y-2">
+                      {analyticsData.deviceStats.map((d: any) => (
+                        <div key={d.device} className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                            {d.device === "mobile" ? <Smartphone className="h-4 w-4 text-slate-600" /> :
+                             d.device === "tablet" ? <Tablet className="h-4 w-4 text-slate-600" /> :
+                             <Monitor className="h-4 w-4 text-slate-600" />}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex justify-between text-sm">
+                              <span className="capitalize text-slate-700">{d.device}</span>
+                              <span className="text-slate-500">{d.percentage}%</span>
+                            </div>
+                            <div className="h-1.5 bg-slate-100 rounded-full mt-1">
+                              <div className="h-full bg-blue-500 rounded-full" style={{ width: `${d.percentage}%` }} />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Sources */}
+                  <div className="bg-white rounded-xl border border-slate-200 p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3">Traffic Sources</h3>
+                    <div className="space-y-2">
+                      {analyticsData.sourceStats.slice(0, 5).map((s: any) => (
+                        <div key={s.source} className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                            {s.source === "instagram" ? <Instagram className="h-4 w-4 text-pink-500" /> :
+                             s.source === "twitter" ? <Twitter className="h-4 w-4 text-blue-400" /> :
+                             s.source === "youtube" ? <Youtube className="h-4 w-4 text-red-500" /> :
+                             s.source === "linkedin" ? <Linkedin className="h-4 w-4 text-blue-600" /> :
+                             s.source === "facebook" ? <Globe className="h-4 w-4 text-blue-500" /> :
+                             <Globe className="h-4 w-4 text-slate-500" />}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex justify-between text-sm">
+                              <span className="capitalize text-slate-700">{s.source}</span>
+                              <span className="text-slate-500">{s.count}</span>
+                            </div>
+                            <div className="h-1.5 bg-slate-100 rounded-full mt-1">
+                              <div className="h-full bg-violet-500 rounded-full" style={{ width: `${s.percentage}%` }} />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Browser & OS */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-white rounded-xl border border-slate-200 p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3">Browsers</h3>
+                    <div className="space-y-2">
+                      {analyticsData.browserStats.map((b: any) => (
+                        <div key={b.browser} className="flex justify-between text-sm">
+                          <span className="text-slate-700">{b.browser}</span>
+                          <span className="text-slate-500">{b.percentage}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl border border-slate-200 p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3">Operating Systems</h3>
+                    <div className="space-y-2">
+                      {analyticsData.osStats.map((o: any) => (
+                        <div key={o.os} className="flex justify-between text-sm">
+                          <span className="text-slate-700">{o.os}</span>
+                          <span className="text-slate-500">{o.percentage}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-slate-500">
+                <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                <p>No analytics data available yet</p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="border-t pt-4">
+            <button onClick={() => setShowAnalyticsDialog(false)} className="px-4 py-2 text-slate-600 hover:text-slate-900">
+              Close
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============ SHARE DIALOG ============ */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="h-5 w-5 text-violet-500" />
+              Share Page
+            </DialogTitle>
+            <DialogDescription>
+              Copy your page link or share on social media
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            {/* Page URL */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Page Link</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={selectedPageForAction ? getPageUrl(selectedPageForAction.slug) : ""}
+                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-sm"
+                />
+                <button
+                  onClick={() => selectedPageForAction && copyLink(selectedPageForAction.slug)}
+                  className="px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl flex items-center gap-2 transition-colors"
+                >
+                  {copied === selectedPageForAction?.slug ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied === selectedPageForAction?.slug ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            </div>
+
+            {/* Social Share Buttons */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Share on</label>
+              <div className="grid grid-cols-4 gap-2">
+                <button
+                  onClick={() => {
+                    const url = encodeURIComponent(getPageUrl(selectedPageForAction?.slug || ""));
+                    window.open(`https://twitter.com/intent/tweet?url=${url}&text=Check out my page!`, "_blank");
+                  }}
+                  className="flex flex-col items-center gap-1 p-3 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                >
+                  <Twitter className="h-5 w-5 text-blue-400" />
+                  <span className="text-xs text-slate-600">Twitter</span>
+                </button>
+                <button
+                  onClick={() => {
+                    const url = encodeURIComponent(getPageUrl(selectedPageForAction?.slug || ""));
+                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, "_blank");
+                  }}
+                  className="flex flex-col items-center gap-1 p-3 rounded-xl border border-slate-200 hover:border-blue-600 hover:bg-blue-50 transition-colors"
+                >
+                  <Globe className="h-5 w-5 text-blue-600" />
+                  <span className="text-xs text-slate-600">Facebook</span>
+                </button>
+                <button
+                  onClick={() => {
+                    const url = encodeURIComponent(getPageUrl(selectedPageForAction?.slug || ""));
+                    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, "_blank");
+                  }}
+                  className="flex flex-col items-center gap-1 p-3 rounded-xl border border-slate-200 hover:border-blue-700 hover:bg-blue-50 transition-colors"
+                >
+                  <Linkedin className="h-5 w-5 text-blue-700" />
+                  <span className="text-xs text-slate-600">LinkedIn</span>
+                </button>
+                <button
+                  onClick={() => {
+                    const url = getPageUrl(selectedPageForAction?.slug || "");
+                    const text = encodeURIComponent(`Check out my page: ${url}`);
+                    window.open(`https://wa.me/?text=${text}`, "_blank");
+                  }}
+                  className="flex flex-col items-center gap-1 p-3 rounded-xl border border-slate-200 hover:border-green-500 hover:bg-green-50 transition-colors"
+                >
+                  <MessageSquare className="h-5 w-5 text-green-500" />
+                  <span className="text-xs text-slate-600">WhatsApp</span>
+                </button>
+              </div>
+            </div>
+
+            {/* QR Code hint */}
+            <div className="bg-slate-50 rounded-xl p-4 text-center">
+              <p className="text-sm text-slate-600">
+                Want a QR code for this page?
+              </p>
+              <button
+                onClick={() => {
+                  setShowShareDialog(false);
+                  router.push(`/app/qr?url=${encodeURIComponent(getPageUrl(selectedPageForAction?.slug || ""))}`);
+                }}
+                className="mt-2 text-sm text-violet-600 hover:text-violet-700 font-medium"
+              >
+                Create QR Code →
+              </button>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <button onClick={() => setShowShareDialog(false)} className="px-4 py-2 text-slate-600 hover:text-slate-900">
+              Close
+            </button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
