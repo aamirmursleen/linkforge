@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/db";
+import prisma, { isDbConnectionError, getDbErrorMessage } from "@/lib/db";
 import { QR_TEMPLATES } from "@/lib/qr";
 
 // GET /api/qr/templates - List QR templates
@@ -59,7 +59,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: templates });
   } catch (error) {
     console.error("Error fetching templates:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -107,7 +110,10 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
   } catch (error) {
     console.error("Error creating template:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -140,6 +146,9 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true, message: "Template deleted" });
   } catch (error) {
     console.error("Error deleting template:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

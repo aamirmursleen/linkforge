@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/db";
+import prisma, { isDbConnectionError, getDbErrorMessage } from "@/lib/db";
 import {
   verifyPassword,
   checkPasswordAttempts,
@@ -82,8 +82,11 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("Error verifying password:", error);
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }

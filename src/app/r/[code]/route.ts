@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/db";
+import prisma, { isDbConnectionError, getDbErrorMessage } from "@/lib/db";
 import { buildClickEventData } from "@/lib/analytics";
 import {
   detectDevice,
@@ -168,6 +168,9 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error in redirect:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

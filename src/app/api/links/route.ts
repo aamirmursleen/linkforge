@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/db";
+import prisma, { isDbConnectionError, getDbErrorMessage } from "@/lib/db";
 import { generateShortCode, isValidUrl } from "@/lib/analytics";
 import { buildShortUrl } from "@/lib/domains";
 import { hashPassword } from "@/lib/redirect";
@@ -176,23 +176,27 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("Error creating link:", error);
 
-    // Check for database configuration errors
-    if (error.message?.includes("Database not configured") ||
-        error.message?.includes("DATABASE_URL")) {
-      return NextResponse.json({
-        error: "Database not configured. Please set up PostgreSQL database on Vercel.",
-        setup: "Go to Vercel Dashboard → Storage → Create Database → Postgres"
-      }, { status: 503 });
+    // Database connection / tenant errors (Supabase paused, bad credentials, etc.)
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
     }
 
-    // Check for connection errors
-    if (error.code === "ECONNREFUSED" || error.code === "ENOTFOUND") {
-      return NextResponse.json({
-        error: "Cannot connect to database. Please check your DATABASE_URL."
-      }, { status: 503 });
+    // Prisma unique constraint violation (race condition on shortCode)
+    if (error?.code === "P2002") {
+      return NextResponse.json({ error: "This short code is already taken. Please try another." }, { status: 409 });
     }
 
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    // Prisma foreign key constraint (invalid domainId, folderId, etc.)
+    if (error?.code === "P2003") {
+      return NextResponse.json({ error: "Invalid reference: the specified domain, folder, or workspace does not exist." }, { status: 400 });
+    }
+
+    // Prisma record not found
+    if (error?.code === "P2025") {
+      return NextResponse.json({ error: "Referenced record not found." }, { status: 404 });
+    }
+
+    return NextResponse.json({ error: "Failed to create link. Please try again." }, { status: 500 });
   }
 }
 
@@ -273,20 +277,10 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error("Error fetching links:", error);
 
-    if (error.message?.includes("Database not configured") ||
-        error.message?.includes("DATABASE_URL")) {
-      return NextResponse.json({
-        error: "Database not configured. Please set up PostgreSQL database on Vercel.",
-        setup: "Go to Vercel Dashboard → Storage → Create Database → Postgres"
-      }, { status: 503 });
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
     }
 
-    if (error.code === "ECONNREFUSED" || error.code === "ENOTFOUND") {
-      return NextResponse.json({
-        error: "Cannot connect to database. Please check your DATABASE_URL."
-      }, { status: 503 });
-    }
-
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch links. Please try again." }, { status: 500 });
   }
 }

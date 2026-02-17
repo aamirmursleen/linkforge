@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/db";
+import prisma, { isDbConnectionError, getDbErrorMessage } from "@/lib/db";
 import { isValidUrl } from "@/lib/analytics";
 
 // GET /api/links/[id] - Get single link details
@@ -47,8 +47,11 @@ export async function GET(
 
   } catch (error) {
     console.error("Error fetching link:", error);
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }
@@ -130,8 +133,11 @@ export async function PATCH(
 
   } catch (error) {
     console.error("Error updating link:", error);
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }
@@ -169,8 +175,11 @@ export async function DELETE(
 
   } catch (error) {
     console.error("Error deleting link:", error);
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }

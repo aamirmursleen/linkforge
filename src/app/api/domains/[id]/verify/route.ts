@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/db";
+import prisma, { isDbConnectionError, getDbErrorMessage } from "@/lib/db";
 import { verifyDomainDNS, getDNSInstructions } from "@/lib/domains";
 
 // POST /api/domains/[id]/verify - Verify domain DNS configuration
@@ -112,8 +112,11 @@ export async function POST(
     });
   } catch (error) {
     console.error("Error verifying domain:", error);
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }

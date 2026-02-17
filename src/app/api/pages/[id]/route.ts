@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/db";
+import prisma, { isDbConnectionError, getDbErrorMessage } from "@/lib/db";
 
 // GET /api/pages/[id] - Get single page
 export async function GET(
@@ -26,7 +26,10 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching page:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -102,7 +105,10 @@ export async function PATCH(
     });
   } catch (error) {
     console.error("Error updating page:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -119,6 +125,9 @@ export async function DELETE(
     return NextResponse.json({ success: true, message: "Page deleted" });
   } catch (error) {
     console.error("Error deleting page:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

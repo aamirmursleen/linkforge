@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/db";
+import prisma, { isDbConnectionError, getDbErrorMessage } from "@/lib/db";
 
 // GET /api/folders - List all folders for workspace
 export async function GET(request: NextRequest) {
@@ -47,7 +47,10 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching folders:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -92,7 +95,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: folder }, { status: 201 });
   } catch (error) {
     console.error("Error creating folder:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -125,7 +131,10 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true, data: folder });
   } catch (error) {
     console.error("Error updating folder:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -168,6 +177,9 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true, message: "Folder deleted" });
   } catch (error) {
     console.error("Error deleting folder:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

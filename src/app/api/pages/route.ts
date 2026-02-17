@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/db";
+import prisma, { isDbConnectionError, getDbErrorMessage } from "@/lib/db";
 
 // Helper to get or create default workspace
 async function getOrCreateDefaultWorkspace() {
@@ -48,7 +48,10 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching pages:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
 
@@ -112,6 +115,9 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
   } catch (error) {
     console.error("Error creating page:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

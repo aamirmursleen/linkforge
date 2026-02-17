@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/db";
+import prisma, { isDbConnectionError, getDbErrorMessage } from "@/lib/db";
 import { getDNSInstructions } from "@/lib/domains";
 
 // GET /api/domains/[id] - Get single domain details
@@ -47,8 +47,11 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching domain:", error);
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }
@@ -108,8 +111,11 @@ export async function PATCH(
     });
   } catch (error) {
     console.error("Error updating domain:", error);
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }
@@ -173,8 +179,11 @@ export async function DELETE(
     });
   } catch (error) {
     console.error("Error deleting domain:", error);
+    if (isDbConnectionError(error)) {
+      return NextResponse.json({ error: getDbErrorMessage(error) }, { status: 503 });
+    }
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }

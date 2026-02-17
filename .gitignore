@@ -45,5 +45,6 @@ next-env.d.ts
 # Database
 *.db
 *.db-journal
+/data/postgres
 
 .vercel
